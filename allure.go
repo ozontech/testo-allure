@@ -109,6 +109,8 @@ type PluginAllure struct {
 
 	queuedSetups    syncutil.MutexGuarded[[]*PluginAllure]
 	queuedTearDowns syncutil.MutexGuarded[[]*PluginAllure]
+
+	maxAttachmentSize int64
 }
 
 // Plugin implements [testoplugin.Plugin].
@@ -328,6 +330,12 @@ func (a *PluginAllure) Known() {
 
 // Attach an attachment.
 //
+// If option [WithMaxAttachmentSize] is specified, passed
+// attachment is automatically trimmed of its suffix.
+//
+// Trimmed attachments are always of type [TextPlain] with suffix
+// message added stating that an attachment exceeds a size limit.
+//
 // See [Bytes] and [File] to create an attachment.
 //
 //	t.Attach("login page", allure.Bytes([]byte(...)))
@@ -338,6 +346,61 @@ func (a *PluginAllure) Attach(name string, at Attachment) {
 	if a.excluded {
 		return
 	}
+
+	if a.maxAttachmentSize <= 0 {
+		a.attach(name, at)
+
+		return
+	}
+
+	if size, ok := at.SizeHint(); ok && size <= a.maxAttachmentSize {
+		a.attach(name, at)
+
+		return
+	}
+
+	// fast path (most common).
+	if b, ok := at.(AttachmentBytes); ok {
+		trimmed := trimmedAttachment(
+			b.Data,
+			b.Type(),
+			a.maxAttachmentSize,
+		)
+
+		a.attach(name, trimmed)
+
+		return
+	}
+
+	r, err := at.Open()
+	if err != nil {
+		a.attach(name, at)
+
+		return
+	}
+
+	defer func() { _ = r.Close() }()
+
+	// add one extra byte so that [trimmedAttachment] trims it,
+	// yet we don't load more data in memory than needed.
+	data := make([]byte, a.maxAttachmentSize+1)
+
+	n, err := r.Read(data)
+	if err != nil {
+		a.attach(name, at)
+
+		return
+	}
+
+	data = data[:n]
+
+	trimmed := trimmedAttachment(data, at.Type(), a.maxAttachmentSize)
+
+	a.attach(name, trimmed)
+}
+
+func (a *PluginAllure) attach(name string, at Attachment) {
+	a.Helper()
 
 	if err := mkdir(a.outputDir); err != nil {
 		a.Logf("allure: failed to create output dir: %v", err)
@@ -1533,4 +1596,24 @@ func (a *PluginAllure) propagatedStatusDetails(descendants []*PluginAllure) Stat
 		Message: strings.Join(messages, "\n\n\n"),
 		Trace:   strings.Join(traces, "\n\n\n"),
 	}
+}
+
+func trimmedAttachment(
+	data []byte,
+	mediaType MediaType,
+	limit int64,
+) AttachmentBytes {
+	if len(data) <= int(limit) {
+		return Bytes(data).As(mediaType)
+	}
+
+	// we can't use format like "want %d, got %d" because len(data)
+	// isn't always a "full" attachment.
+
+	suffix := fmt.Sprintf("...\n\n...size exceeds %d bytes limit", limit)
+
+	data = data[:limit]
+	data = append(data, suffix...)
+
+	return Bytes(data).As(TextPlain)
 }
