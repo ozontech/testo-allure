@@ -142,6 +142,8 @@ func (Suite) TestRun(t T) {
 
 ## Attachments
 
+### Deduplication
+
 Allure plugin features an efficient hashsum-based attachment deduplication mechanism.
 
 It will automatically keep track of written attachments so that a single attachment added, say, 100 times, will result
@@ -152,10 +154,50 @@ But it can be enabled with `WithDeduplicateAttachments` option, if you need it.
 
 ```go
 func init() {
-    testo.Option(
+    testo.Options(
         allure.WithDeduplicateAttachments(true),
     )
 }
+```
+
+### Size limit
+
+Large attachments can be automatically trimmed to ensure that your allure report
+won't grow more than needed.
+
+This feature is disabled by default, but you can enable it with `WithMaxAttachmentSize` option:
+
+```go
+// WithMaxAttachmentSize specifies a limit for the size of
+// each attachment as a number of bytes.
+//
+// If greater than zero, attachments are automatically trimmed of their suffix
+// if their size exceeds this limit.
+//
+// Trimmed attachments are always of type [TextPlain] with suffix
+// message added stating that an attachment exceeds a size limit.
+//
+//	WithMaxAttachmentSize(1000) // 1 KB
+func WithMaxAttachmentSize(bytes int64) testoplugin.Option
+```
+
+Example:
+
+```go
+func init() {
+    testo.Options(
+        allure.WithMaxAttachmentSize(1000),
+    )
+}
+```
+
+With this option set, large attachment will look like this:
+
+```txt
+some large attachment with
+endless text and...
+
+...size exceeds 1000 bytes limit
 ```
 
 ## Options
