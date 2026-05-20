@@ -58,8 +58,9 @@ type PluginAllure struct {
 
 	uuid UUID
 
-	timeTest                    timeBoundary
-	timeBeforeAll, timeAfterAll timeBoundary
+	timeTest      timeBoundary
+	timeBeforeAll timeBoundary
+	timeAfterAll  syncutil.MutexGuarded[timeBoundary]
 
 	// used for BeforeAll hooks to set stop once when first test is run
 	setBeforeAllStopOnce sync.Once
@@ -699,7 +700,9 @@ func (a *PluginAllure) afterAll() {
 		a.timeBeforeAll.Stop = now
 	})
 
-	a.timeAfterAll.Stop = now
+	a.timeAfterAll.Modify(func(value *timeBoundary) {
+		value.Stop = now
+	})
 
 	if !a.Failed() && a.Skipped() {
 		return
@@ -744,8 +747,8 @@ func (a *PluginAllure) afterAll() {
 		switch {
 		case !hooks.MissedBeforeAll && !hooks.MissedAfterAll:
 			stop := a.timeBeforeAll.Stop
-			if !stop.Equal(a.timeAfterAll.Stop) {
-				stop = stop.Add(a.timeAfterAll.Duration())
+			if !stop.Equal(a.timeAfterAll.Load().Stop) {
+				stop = stop.Add(a.timeAfterAll.Load().Duration())
 			}
 
 			standalone("Before & After All", all, timeBoundary{
@@ -761,7 +764,7 @@ func (a *PluginAllure) afterAll() {
 			standalone("Before All", all, a.timeBeforeAll)
 
 		case !hooks.MissedAfterAll:
-			standalone("After All", all, a.timeAfterAll)
+			standalone("After All", all, a.timeAfterAll.Load())
 		}
 	}
 
@@ -869,7 +872,13 @@ func (a *PluginAllure) afterEach() {
 	}
 
 	if a.parent != nil {
-		a.parent.timeAfterAll.Start = time.Now()
+		now := time.Now()
+
+		a.parent.timeAfterAll.Modify(func(value *timeBoundary) {
+			if value.Start.Compare(now) < 0 {
+				value.Start = now
+			}
+		})
 	}
 }
 
