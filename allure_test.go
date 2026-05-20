@@ -249,3 +249,39 @@ Caller: /Users/user/testo/pkg/plugins/allure/examples/02_advanced/main_test.go:1
 		})
 	}
 }
+
+func Test_fullName(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		Name  string
+		Input string
+		Want  string
+	}{
+		{
+			Name:  "regular name remains unchanged",
+			Input: "Test/Suite/TestFoo",
+			Want:  "Test/Suite/TestFoo",
+		},
+		{
+			Name:  "name with hash in the middle remains unchanged",
+			Input: "TestFoo/#02/TestFoo",
+			Want:  "TestFoo/#02/TestFoo",
+		},
+		{
+			Name:  "name with hash in the end is trimmed",
+			Input: "Test/Suite/TestFoo#01",
+			Want:  "Test/Suite/TestFoo",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.Name, func(t *testing.T) {
+			t.Parallel()
+
+			got := fullName(tt.Input)
+
+			require.Equal(t, tt.Want, got)
+		})
+	}
+}

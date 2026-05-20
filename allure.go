@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -485,16 +486,20 @@ func (a *PluginAllure) descendants() []*PluginAllure {
 }
 
 func (a *PluginAllure) fullName() string {
-	name := a.Name()
+	return fullName(a.Name())
+}
+
+func fullName(name string) string {
+	parent, base := path.Split(name)
 
 	// remove (if any) test index.
 	// e.g. "Suite/MyTest#01" -> "Suite/MyTest"
-	idx := strings.LastIndex(name, "#")
+	idx := strings.LastIndex(base, "#")
 	if idx != -1 {
-		name = name[:idx]
+		base = base[:idx]
 	}
 
-	return name
+	return parent + base
 }
 
 func (a *PluginAllure) statusDetails() StatusDetails {
@@ -956,12 +961,12 @@ func (a *PluginAllure) plan() testoplugin.Plan {
 		Prepare: func(_ testoreflect.SuiteInfo, tests *[]testoplugin.PlannedTest) {
 			a.Helper()
 
-			path := os.Getenv("ALLURE_TESTPLAN_PATH")
-			if path == "" {
+			planPath := os.Getenv("ALLURE_TESTPLAN_PATH")
+			if planPath == "" {
 				return
 			}
 
-			data, err := os.ReadFile(path)
+			data, err := os.ReadFile(planPath)
 			if err != nil {
 				return
 			}
@@ -1007,7 +1012,7 @@ func (a *PluginAllure) plan() testoplugin.Plan {
 			a.Logf(
 				"allure: using test plan v%s from %q, tests excluded: %d",
 				plan.Version,
-				path,
+				planPath,
 				total-len(*tests),
 			)
 		},
@@ -1208,15 +1213,15 @@ func writeResult(dir string, res result) error {
 		return fmt.Errorf("marshal allure test result file: %w", err)
 	}
 
-	path := filepath.Join(dir, res.UUID+"-result.json")
+	resultPath := filepath.Join(dir, res.UUID+"-result.json")
 
 	err = os.WriteFile(
-		path,
+		resultPath,
 		marshalled,
 		permFile,
 	)
 	if err != nil {
-		return fmt.Errorf("write test result file for %q at %q: %w", res.FullName, path, err)
+		return fmt.Errorf("write test result file for %q at %q: %w", res.FullName, resultPath, err)
 	}
 
 	return nil
@@ -1232,15 +1237,15 @@ func writeContainer(dir string, c container) error {
 		return fmt.Errorf("marshal container: %w", err)
 	}
 
-	path := filepath.Join(dir, c.UUID+"-container.json")
+	containerPath := filepath.Join(dir, c.UUID+"-container.json")
 
 	err = os.WriteFile(
-		path,
+		containerPath,
 		marshalled,
 		permFile,
 	)
 	if err != nil {
-		return fmt.Errorf("write container file to %q: %w", path, err)
+		return fmt.Errorf("write container file to %q: %w", containerPath, err)
 	}
 
 	return nil
@@ -1267,11 +1272,11 @@ func writeProperties(dir string, p properties) error {
 
 	const filename = "environment.properties"
 
-	path := filepath.Join(dir, filename)
+	propertiesPath := filepath.Join(dir, filename)
 
-	err = os.WriteFile(path, marshalled, permFile)
+	err = os.WriteFile(propertiesPath, marshalled, permFile)
 	if err != nil {
-		return fmt.Errorf("write properties file at %s: %w", path, err)
+		return fmt.Errorf("write properties file at %s: %w", propertiesPath, err)
 	}
 
 	return nil
@@ -1298,10 +1303,10 @@ func writeCategories(dir string, categories []Category) error {
 	// We could already have categories file written
 	// by other suite, so we need to append to it.
 	// But also we have to remain categories unique.
-	path := filepath.Join(dir, "categories.json")
+	categoriesPath := filepath.Join(dir, "categories.json")
 
 	readExisting := func() []Category {
-		file, err := os.ReadFile(path)
+		file, err := os.ReadFile(categoriesPath)
 		if err != nil {
 			return nil
 		}
@@ -1329,9 +1334,9 @@ func writeCategories(dir string, categories []Category) error {
 		return fmt.Errorf("marshal categories: %w", err)
 	}
 
-	err = os.WriteFile(path, marshalled, permFile)
+	err = os.WriteFile(categoriesPath, marshalled, permFile)
 	if err != nil {
-		return fmt.Errorf("write categories file at %q: %w", path, err)
+		return fmt.Errorf("write categories file at %q: %w", categoriesPath, err)
 	}
 
 	return nil
