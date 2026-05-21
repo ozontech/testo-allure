@@ -1365,6 +1365,7 @@ func (a *PluginAllure) labels() []Label {
 	// these labels we should not add if user already did so.
 	// because these labels are added implicitly without user interaction.
 	for _, l := range []Label{
+		{Name: labelParentSuite, Value: a.parentSuiteName()},
 		{Name: labelSuite, Value: a.suiteName()},
 		{Name: labelHost, Value: hostname},
 		{Name: labelLanguage, Value: "go"},
@@ -1442,6 +1443,19 @@ func (a *PluginAllure) historyID() string {
 	}))
 
 	return id
+}
+
+func (a *PluginAllure) parentSuiteName() string {
+	parent := testo.Reflect(a).Suite.Parent
+	if parent == nil {
+		return ""
+	}
+
+	if stringer, ok := parent.Value.(fmt.Stringer); ok {
+		return stringer.String()
+	}
+
+	return parent.Name
 }
 
 func (a *PluginAllure) suiteName() string {
