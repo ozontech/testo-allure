@@ -2,8 +2,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/gabriel-vasile/mimetype v1.4.11 h1:AQvxbp830wPhHTqc1u7nzoLT+ZFxGY7emj5DR5DYFik=
 github.com/gabriel-vasile/mimetype v1.4.11/go.mod h1:d+9Oxyo1wTzWdyVUPMmXFvp4F9tea18J8ufA774AB3s=
-github.com/ozontech/testo v1.0.0 h1:JFwvv17bbP5aSZ5GZXiJPDNQFPC6N2zn0XjT4A+QbPc=
-github.com/ozontech/testo v1.0.0/go.mod h1:BxVrtOfDZlotYKtHu2u/+kH6qhUDZUBld6/MFa3VvVU=
+github.com/ozontech/testo v1.2.0 h1:WBYYWgW3yKuGmFuB+jbQ6jWcseC3pnsP6YD1bw+hC+0=
+github.com/ozontech/testo v1.2.0/go.mod h1:BxVrtOfDZlotYKtHu2u/+kH6qhUDZUBld6/MFa3VvVU=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
