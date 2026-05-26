@@ -10,6 +10,7 @@ import (
 	"io"
 	"math"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -37,7 +38,7 @@ const (
 
 // TODO(metafates): use tools.go pattern or go tool command when this plugin is moved into separate repo.
 
-//go:generate ifacemaker -f $GOFILE -o interface.go -s PluginAllure -i Interface -p $GOPACKAGE -e Plugin -y "Interface defines allure plugin interface.\nUseful for writing helpers which require allure methods but can't rely on concrete type." -x -e panicked -e status -e asResult -e parameters -e links -e attachments -e allRawAttachments -e title -e asStep -e timeBoundaries -e steps -e containers -e beforeEach -e afterEach -e hooks -e addMessage -e addTrace -e overrides -e results -e resultsGroupParametrized -e afterAll -e writeResults -e writeContainers -e writeAttachments -e writeAttachment -e writeProperties -e writeCategories -e labels -e attachmentPath -e baseName -e testCaseID -e historyID -e resultsFlattenParametrized -e statusDetails -e suiteName -e plugin -e beforeAll -e cleanup -e writeReport -e plan -e applyOptions -e fullName -e createOutputDir -e asContainer -e beforeEachSub -e afterEachSub -e propagatedStatusDetails -e hookDescendants -e descendants -e testChildren -e hasTestNeighbors -e subtest -e attach
+//go:generate ifacemaker -f $GOFILE -o interface.go -s PluginAllure -i Interface -p $GOPACKAGE -e Plugin -y "Interface defines allure plugin interface.\nUseful for writing helpers which require allure methods but can't rely on concrete type." -x -e panicked -e status -e asResult -e parameters -e links -e attachments -e allRawAttachments -e title -e asStep -e timeBoundaries -e steps -e containers -e beforeEach -e afterEach -e hooks -e addMessage -e addTrace -e overrides -e results -e resultsGroupParametrized -e afterAll -e writeResults -e writeContainers -e writeAttachments -e writeAttachment -e writeProperties -e writeCategories -e labels -e attachmentPath -e baseName -e testCaseID -e historyID -e resultsFlattenParametrized -e statusDetails -e suiteName -e plugin -e beforeAll -e cleanup -e writeReport -e plan -e applyOptions -e fullName -e createOutputDir -e asContainer -e beforeEachSub -e afterEachSub -e propagatedStatusDetails -e hookDescendants -e descendants -e testChildren -e hasTestNeighbors -e subtest -e attach -e parentSuiteName
 
 var _ Interface = (*PluginAllure)(nil)
 
@@ -59,8 +60,9 @@ type PluginAllure struct {
 
 	uuid UUID
 
-	timeTest                    timeBoundary
-	timeBeforeAll, timeAfterAll timeBoundary
+	timeTest      timeBoundary
+	timeBeforeAll timeBoundary
+	timeAfterAll  syncutil.MutexGuarded[timeBoundary]
 
 	// used for BeforeAll hooks to set stop once when first test is run
 	setBeforeAllStopOnce sync.Once
@@ -545,16 +547,20 @@ func (a *PluginAllure) descendants() []*PluginAllure {
 }
 
 func (a *PluginAllure) fullName() string {
-	name := a.Name()
+	return fullName(a.Name())
+}
+
+func fullName(name string) string {
+	parent, base := path.Split(name)
 
 	// remove (if any) test index.
 	// e.g. "Suite/MyTest#01" -> "Suite/MyTest"
-	idx := strings.LastIndex(name, "#")
+	idx := strings.LastIndex(base, "#")
 	if idx != -1 {
-		name = name[:idx]
+		base = base[:idx]
 	}
 
-	return name
+	return parent + base
 }
 
 func (a *PluginAllure) statusDetails() StatusDetails {
@@ -759,7 +765,9 @@ func (a *PluginAllure) afterAll() {
 		a.timeBeforeAll.Stop = now
 	})
 
-	a.timeAfterAll.Stop = now
+	a.timeAfterAll.Modify(func(value *timeBoundary) {
+		value.Stop = now
+	})
 
 	if !a.Failed() && a.Skipped() {
 		return
@@ -804,8 +812,8 @@ func (a *PluginAllure) afterAll() {
 		switch {
 		case !hooks.MissedBeforeAll && !hooks.MissedAfterAll:
 			stop := a.timeBeforeAll.Stop
-			if !stop.Equal(a.timeAfterAll.Stop) {
-				stop = stop.Add(a.timeAfterAll.Duration())
+			if !stop.Equal(a.timeAfterAll.Load().Stop) {
+				stop = stop.Add(a.timeAfterAll.Load().Duration())
 			}
 
 			standalone("Before & After All", all, timeBoundary{
@@ -821,7 +829,7 @@ func (a *PluginAllure) afterAll() {
 			standalone("Before All", all, a.timeBeforeAll)
 
 		case !hooks.MissedAfterAll:
-			standalone("After All", all, a.timeAfterAll)
+			standalone("After All", all, a.timeAfterAll.Load())
 		}
 	}
 
@@ -929,7 +937,13 @@ func (a *PluginAllure) afterEach() {
 	}
 
 	if a.parent != nil {
-		a.parent.timeAfterAll.Start = time.Now()
+		now := time.Now()
+
+		a.parent.timeAfterAll.Modify(func(value *timeBoundary) {
+			if value.Start.Compare(now) < 0 {
+				value.Start = now
+			}
+		})
 	}
 }
 
@@ -1016,12 +1030,12 @@ func (a *PluginAllure) plan() testoplugin.Plan {
 		Prepare: func(_ testoreflect.SuiteInfo, tests *[]testoplugin.PlannedTest) {
 			a.Helper()
 
-			path := os.Getenv("ALLURE_TESTPLAN_PATH")
-			if path == "" {
+			planPath := os.Getenv("ALLURE_TESTPLAN_PATH")
+			if planPath == "" {
 				return
 			}
 
-			data, err := os.ReadFile(path)
+			data, err := os.ReadFile(planPath)
 			if err != nil {
 				return
 			}
@@ -1067,7 +1081,7 @@ func (a *PluginAllure) plan() testoplugin.Plan {
 			a.Logf(
 				"allure: using test plan v%s from %q, tests excluded: %d",
 				plan.Version,
-				path,
+				planPath,
 				total-len(*tests),
 			)
 		},
@@ -1077,7 +1091,7 @@ func (a *PluginAllure) plan() testoplugin.Plan {
 func (a *PluginAllure) hooks() testoplugin.Hooks {
 	return testoplugin.Hooks{
 		BeforeAll:     testoplugin.Hook{Func: a.beforeAll},
-		BeforeEach:    testoplugin.Hook{Func: a.beforeEach},
+		BeforeEach:    testoplugin.Hook{Func: a.beforeEach, Priority: testoplugin.TryFirst},
 		BeforeEachSub: testoplugin.Hook{Func: a.beforeEachSub},
 	}
 }
@@ -1272,15 +1286,15 @@ func writeResult(dir string, res result) error {
 		return fmt.Errorf("marshal allure test result file: %w", err)
 	}
 
-	path := filepath.Join(dir, res.UUID+"-result.json")
+	resultPath := filepath.Join(dir, res.UUID+"-result.json")
 
 	err = os.WriteFile(
-		path,
+		resultPath,
 		marshalled,
 		permFile,
 	)
 	if err != nil {
-		return fmt.Errorf("write test result file for %q at %q: %w", res.FullName, path, err)
+		return fmt.Errorf("write test result file for %q at %q: %w", res.FullName, resultPath, err)
 	}
 
 	return nil
@@ -1296,15 +1310,15 @@ func writeContainer(dir string, c container) error {
 		return fmt.Errorf("marshal container: %w", err)
 	}
 
-	path := filepath.Join(dir, c.UUID+"-container.json")
+	containerPath := filepath.Join(dir, c.UUID+"-container.json")
 
 	err = os.WriteFile(
-		path,
+		containerPath,
 		marshalled,
 		permFile,
 	)
 	if err != nil {
-		return fmt.Errorf("write container file to %q: %w", path, err)
+		return fmt.Errorf("write container file to %q: %w", containerPath, err)
 	}
 
 	return nil
@@ -1331,11 +1345,11 @@ func writeProperties(dir string, p properties) error {
 
 	const filename = "environment.properties"
 
-	path := filepath.Join(dir, filename)
+	propertiesPath := filepath.Join(dir, filename)
 
-	err = os.WriteFile(path, marshalled, permFile)
+	err = os.WriteFile(propertiesPath, marshalled, permFile)
 	if err != nil {
-		return fmt.Errorf("write properties file at %s: %w", path, err)
+		return fmt.Errorf("write properties file at %s: %w", propertiesPath, err)
 	}
 
 	return nil
@@ -1362,10 +1376,10 @@ func writeCategories(dir string, categories []Category) error {
 	// We could already have categories file written
 	// by other suite, so we need to append to it.
 	// But also we have to remain categories unique.
-	path := filepath.Join(dir, "categories.json")
+	categoriesPath := filepath.Join(dir, "categories.json")
 
 	readExisting := func() []Category {
-		file, err := os.ReadFile(path)
+		file, err := os.ReadFile(categoriesPath)
 		if err != nil {
 			return nil
 		}
@@ -1393,9 +1407,9 @@ func writeCategories(dir string, categories []Category) error {
 		return fmt.Errorf("marshal categories: %w", err)
 	}
 
-	err = os.WriteFile(path, marshalled, permFile)
+	err = os.WriteFile(categoriesPath, marshalled, permFile)
 	if err != nil {
-		return fmt.Errorf("write categories file at %q: %w", path, err)
+		return fmt.Errorf("write categories file at %q: %w", categoriesPath, err)
 	}
 
 	return nil
@@ -1415,6 +1429,7 @@ func (a *PluginAllure) labels() []Label {
 	// these labels we should not add if user already did so.
 	// because these labels are added implicitly without user interaction.
 	for _, l := range []Label{
+		{Name: labelParentSuite, Value: a.parentSuiteName()},
 		{Name: labelSuite, Value: a.suiteName()},
 		{Name: labelHost, Value: hostname},
 		{Name: labelLanguage, Value: "go"},
@@ -1492,6 +1507,19 @@ func (a *PluginAllure) historyID() string {
 	}))
 
 	return id
+}
+
+func (a *PluginAllure) parentSuiteName() string {
+	parent := testo.Reflect(a).Suite.Parent
+	if parent == nil {
+		return ""
+	}
+
+	if stringer, ok := parent.Value.(fmt.Stringer); ok {
+		return stringer.String()
+	}
+
+	return parent.Name
 }
 
 func (a *PluginAllure) suiteName() string {

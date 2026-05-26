@@ -124,17 +124,18 @@ func NewLabel(name, value string) Label {
 
 // well-known labels.
 const (
-	labelSeverity  = "severity"
-	labelAllureID  = "allure_id"
-	labelTag       = "tag"
-	labelSuite     = "suite"
-	labelHost      = "host"
-	labelFramework = "framework"
-	labelLanguage  = "language"
-	labelOwner     = "owner"
-	labelEpic      = "epic"
-	labelFeature   = "feature"
-	labelStory     = "story"
+	labelSeverity    = "severity"
+	labelAllureID    = "allure_id"
+	labelTag         = "tag"
+	labelParentSuite = "parentSuite"
+	labelSuite       = "suite"
+	labelHost        = "host"
+	labelFramework   = "framework"
+	labelLanguage    = "language"
+	labelOwner       = "owner"
+	labelEpic        = "epic"
+	labelFeature     = "feature"
+	labelStory       = "story"
 )
 
 // LinkType is the type of link.
