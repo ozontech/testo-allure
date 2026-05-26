@@ -37,7 +37,7 @@ const (
 
 // TODO(metafates): use tools.go pattern or go tool command when this plugin is moved into separate repo.
 
-//go:generate ifacemaker -f $GOFILE -o interface.go -s PluginAllure -i Interface -p $GOPACKAGE -e Plugin -y "Interface defines allure plugin interface.\nUseful for writing helpers which require allure methods but can't rely on concrete type." -x -e panicked -e status -e asResult -e parameters -e links -e attachments -e allRawAttachments -e title -e asStep -e timeBoundaries -e steps -e containers -e beforeEach -e afterEach -e hooks -e addMessage -e addTrace -e overrides -e results -e resultsGroupParametrized -e afterAll -e writeResults -e writeContainers -e writeAttachments -e writeAttachment -e writeProperties -e writeCategories -e labels -e attachmentPath -e baseName -e testCaseID -e historyID -e resultsFlattenParametrized -e statusDetails -e suiteName -e plugin -e beforeAll -e cleanup -e writeReport -e plan -e applyOptions -e fullName -e createOutputDir -e asContainer -e beforeEachSub -e afterEachSub -e propagatedStatusDetails -e hookDescendants -e descendants -e testChildren -e hasTestNeighbors -e subtest
+//go:generate ifacemaker -f $GOFILE -o interface.go -s PluginAllure -i Interface -p $GOPACKAGE -e Plugin -y "Interface defines allure plugin interface.\nUseful for writing helpers which require allure methods but can't rely on concrete type." -x -e panicked -e status -e asResult -e parameters -e links -e attachments -e allRawAttachments -e title -e asStep -e timeBoundaries -e steps -e containers -e beforeEach -e afterEach -e hooks -e addMessage -e addTrace -e overrides -e results -e resultsGroupParametrized -e afterAll -e writeResults -e writeContainers -e writeAttachments -e writeAttachment -e writeProperties -e writeCategories -e labels -e attachmentPath -e baseName -e testCaseID -e historyID -e resultsFlattenParametrized -e statusDetails -e suiteName -e plugin -e beforeAll -e cleanup -e writeReport -e plan -e applyOptions -e fullName -e createOutputDir -e asContainer -e beforeEachSub -e afterEachSub -e propagatedStatusDetails -e hookDescendants -e descendants -e testChildren -e hasTestNeighbors -e subtest -e parentSuiteName
 
 var _ Interface = (*PluginAllure)(nil)
 
@@ -1031,7 +1031,7 @@ func (a *PluginAllure) plan() testoplugin.Plan {
 func (a *PluginAllure) hooks() testoplugin.Hooks {
 	return testoplugin.Hooks{
 		BeforeAll:     testoplugin.Hook{Func: a.beforeAll},
-		BeforeEach:    testoplugin.Hook{Func: a.beforeEach},
+		BeforeEach:    testoplugin.Hook{Func: a.beforeEach, Priority: testoplugin.TryFirst},
 		BeforeEachSub: testoplugin.Hook{Func: a.beforeEachSub},
 	}
 }
@@ -1202,6 +1202,15 @@ func (a *PluginAllure) overrides() testoplugin.Overrides {
 
 		Parallel: func(f testoplugin.FuncParallel) testoplugin.FuncParallel {
 			return func() {
+				// If other plugin calls Parallel before each with TryFirst priority
+				// there exists a chance that timeTest.Start would equal to zero,
+				// making beforeParallel a huge duration and breaking other timings.
+				//
+				// So in that case, if start is zero we should update it here.
+				if a.timeTest.Start.IsZero() {
+					a.timeTest.Start = time.Now()
+				}
+
 				a.beforeParallel = time.Since(a.timeTest.Start)
 
 				f()
