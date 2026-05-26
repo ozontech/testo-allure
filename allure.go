@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"path"
@@ -37,7 +38,7 @@ const (
 
 // TODO(metafates): use tools.go pattern or go tool command when this plugin is moved into separate repo.
 
-//go:generate ifacemaker -f $GOFILE -o interface.go -s PluginAllure -i Interface -p $GOPACKAGE -e Plugin -y "Interface defines allure plugin interface.\nUseful for writing helpers which require allure methods but can't rely on concrete type." -x -e panicked -e status -e asResult -e parameters -e links -e attachments -e allRawAttachments -e title -e asStep -e timeBoundaries -e steps -e containers -e beforeEach -e afterEach -e hooks -e addMessage -e addTrace -e overrides -e results -e resultsGroupParametrized -e afterAll -e writeResults -e writeContainers -e writeAttachments -e writeAttachment -e writeProperties -e writeCategories -e labels -e attachmentPath -e baseName -e testCaseID -e historyID -e resultsFlattenParametrized -e statusDetails -e suiteName -e plugin -e beforeAll -e cleanup -e writeReport -e plan -e applyOptions -e fullName -e createOutputDir -e asContainer -e beforeEachSub -e afterEachSub -e propagatedStatusDetails -e hookDescendants -e descendants -e testChildren -e hasTestNeighbors -e subtest -e parentSuiteName
+//go:generate ifacemaker -f $GOFILE -o interface.go -s PluginAllure -i Interface -p $GOPACKAGE -e Plugin -y "Interface defines allure plugin interface.\nUseful for writing helpers which require allure methods but can't rely on concrete type." -x -e panicked -e status -e asResult -e parameters -e links -e attachments -e allRawAttachments -e title -e asStep -e timeBoundaries -e steps -e containers -e beforeEach -e afterEach -e hooks -e addMessage -e addTrace -e overrides -e results -e resultsGroupParametrized -e afterAll -e writeResults -e writeContainers -e writeAttachments -e writeAttachment -e writeProperties -e writeCategories -e labels -e attachmentPath -e baseName -e testCaseID -e historyID -e resultsFlattenParametrized -e statusDetails -e suiteName -e plugin -e beforeAll -e cleanup -e writeReport -e plan -e applyOptions -e fullName -e createOutputDir -e asContainer -e beforeEachSub -e afterEachSub -e propagatedStatusDetails -e hookDescendants -e descendants -e testChildren -e hasTestNeighbors -e subtest -e attach -e parentSuiteName
 
 var _ Interface = (*PluginAllure)(nil)
 
@@ -111,6 +112,8 @@ type PluginAllure struct {
 
 	queuedSetups    syncutil.MutexGuarded[[]*PluginAllure]
 	queuedTearDowns syncutil.MutexGuarded[[]*PluginAllure]
+
+	maxAttachmentSize int64
 }
 
 // Plugin implements [testoplugin.Plugin].
@@ -330,6 +333,12 @@ func (a *PluginAllure) Known() {
 
 // Attach an attachment.
 //
+// If option [WithMaxAttachmentSize] is specified, passed
+// attachment is automatically trimmed of its suffix.
+//
+// Trimmed attachments are always of type [TextPlain] with suffix
+// message added stating that an attachment exceeds a size limit.
+//
 // See [Bytes] and [File] to create an attachment.
 //
 //	t.Attach("login page", allure.Bytes([]byte(...)))
@@ -340,6 +349,57 @@ func (a *PluginAllure) Attach(name string, at Attachment) {
 	if a.excluded {
 		return
 	}
+
+	if a.maxAttachmentSize <= 0 {
+		a.attach(name, at)
+
+		return
+	}
+
+	if size, ok := at.SizeHint(); ok && size <= a.maxAttachmentSize {
+		a.attach(name, at)
+
+		return
+	}
+
+	// fast path (most common).
+	if b, ok := at.(AttachmentBytes); ok {
+		trimmed := trimmedAttachment(
+			b.Data,
+			b.Type(),
+			a.maxAttachmentSize,
+		)
+
+		a.attach(name, trimmed)
+
+		return
+	}
+
+	r, err := at.Open()
+	if err != nil {
+		a.attach(name, at)
+
+		return
+	}
+
+	defer func() { _ = r.Close() }()
+
+	// add one extra byte so that [trimmedAttachment] trims it,
+	// yet we don't load more data in memory than needed.
+	data, err := io.ReadAll(io.LimitReader(r, a.maxAttachmentSize+1))
+	if err != nil {
+		a.attach(name, at)
+
+		return
+	}
+
+	trimmed := trimmedAttachment(data, at.Type(), a.maxAttachmentSize)
+
+	a.attach(name, trimmed)
+}
+
+func (a *PluginAllure) attach(name string, at Attachment) {
+	a.Helper()
 
 	if err := mkdir(a.outputDir); err != nil {
 		a.Logf("allure: failed to create output dir: %v", err)
@@ -1202,16 +1262,11 @@ func (a *PluginAllure) overrides() testoplugin.Overrides {
 
 		Parallel: func(f testoplugin.FuncParallel) testoplugin.FuncParallel {
 			return func() {
-				// If other plugin calls Parallel before each with TryFirst priority
-				// there exists a chance that timeTest.Start would equal to zero,
-				// making beforeParallel a huge duration and breaking other timings.
-				//
-				// So in that case, if start is zero we should update it here.
-				if a.timeTest.Start.IsZero() {
-					a.timeTest.Start = time.Now()
+				// if start is zero it means we are inside a BeforeEach hook of other plugin.
+				// in that case, real test has not started yet, so we shouldn't compute beforeParallel timing.
+				if !a.timeTest.Start.IsZero() {
+					a.beforeParallel = time.Since(a.timeTest.Start)
 				}
-
-				a.beforeParallel = time.Since(a.timeTest.Start)
 
 				f()
 
@@ -1570,4 +1625,24 @@ func (a *PluginAllure) propagatedStatusDetails(descendants []*PluginAllure) Stat
 		Message: strings.Join(messages, "\n\n\n"),
 		Trace:   strings.Join(traces, "\n\n\n"),
 	}
+}
+
+func trimmedAttachment(
+	data []byte,
+	mediaType MediaType,
+	limit int64,
+) AttachmentBytes {
+	if len(data) <= int(limit) {
+		return Bytes(data).As(mediaType)
+	}
+
+	// we can't use format like "want %d, got %d" because len(data)
+	// isn't always a "full" attachment.
+
+	suffix := fmt.Sprintf("...\n\n...size exceeds %d bytes limit", limit)
+
+	data = data[:limit]
+	data = append(data, suffix...)
+
+	return Bytes(data).As(TextPlain)
 }

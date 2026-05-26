@@ -116,6 +116,12 @@ type Interface interface {
 	Known()
 	// Attach an attachment.
 	//
+	// If option [WithMaxAttachmentSize] is specified, passed
+	// attachment is automatically trimmed of its suffix.
+	//
+	// Trimmed attachments are always of type [TextPlain] with suffix
+	// message added stating that an attachment exceeds a size limit.
+	//
 	// See [Bytes] and [File] to create an attachment.
 	//
 	//	t.Attach("login page", allure.Bytes([]byte(...)))

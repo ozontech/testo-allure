@@ -142,6 +142,25 @@ func WithLinks(links ...Link) testoplugin.Option {
 	}
 }
 
+// WithMaxAttachmentSize specifies a limit for the size of
+// each attachment as a number of bytes.
+//
+// If greater than zero, attachments are automatically trimmed of their suffix
+// if their size exceeds this limit.
+//
+// Trimmed attachments are always of type [TextPlain] with suffix
+// message added stating that an attachment exceeds a size limit.
+//
+//	WithMaxAttachmentSize(1000) // 1 KB
+func WithMaxAttachmentSize(bytes int64) testoplugin.Option {
+	return testoplugin.Option{
+		Value: option(func(a *PluginAllure) {
+			a.maxAttachmentSize = bytes
+		}),
+		Propagate: true,
+	}
+}
+
 func asStep() testoplugin.Option {
 	return testoplugin.Option{
 		Value: option(func(a *PluginAllure) {
