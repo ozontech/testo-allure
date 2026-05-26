@@ -1248,7 +1248,11 @@ func (a *PluginAllure) overrides() testoplugin.Overrides {
 
 		Parallel: func(f testoplugin.FuncParallel) testoplugin.FuncParallel {
 			return func() {
-				a.beforeParallel = time.Since(a.timeTest.Start)
+				// if start is zero it means we are inside a BeforeEach hook of other plugin.
+				// in that case, real test has not started yet, so we shouldn't compute beforeParallel timing.
+				if !a.timeTest.Start.IsZero() {
+					a.beforeParallel = time.Since(a.timeTest.Start)
+				}
 
 				f()
 
