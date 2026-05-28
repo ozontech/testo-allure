@@ -22,7 +22,9 @@ func (x Requirements) Condition(comp assert.Comparison, msgAndArgs ...interface{
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "condition")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "condition"), NewParameter("comp", asShortString(comp)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "condition"), NewParameter("comp", asShortString(comp)).withMode(x.mode))
+		}()
 		if assert.Condition(t, comp, msgAndArgs...) {
 			return
 		}
@@ -42,7 +44,9 @@ func (x Assertions) Condition(comp assert.Comparison, msgAndArgs ...interface{})
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "condition")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "condition"), NewParameter("comp", asShortString(comp)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "condition"), NewParameter("comp", asShortString(comp)).withMode(x.mode))
+		}()
 		if assert.Condition(t, comp, msgAndArgs...) {
 			return
 		}
@@ -66,7 +70,9 @@ func (x Requirements) Contains(s interface{}, contains interface{}, msgAndArgs .
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "contains")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "contains"), NewParameter("s", asShortString(s)).withMode(x.mode), NewParameter("contains", asShortString(contains)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "contains"), NewParameter("s", asShortString(s)).withMode(x.mode), NewParameter("contains", asShortString(contains)).withMode(x.mode))
+		}()
 		if assert.Contains(t, s, contains, msgAndArgs...) {
 			return
 		}
@@ -91,7 +97,9 @@ func (x Assertions) Contains(s interface{}, contains interface{}, msgAndArgs ...
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "contains")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "contains"), NewParameter("s", asShortString(s)).withMode(x.mode), NewParameter("contains", asShortString(contains)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "contains"), NewParameter("s", asShortString(s)).withMode(x.mode), NewParameter("contains", asShortString(contains)).withMode(x.mode))
+		}()
 		if assert.Contains(t, s, contains, msgAndArgs...) {
 			return
 		}
@@ -111,7 +119,9 @@ func (x Requirements) DirExists(path string, msgAndArgs ...interface{}) {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "dir exists")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "dir exists"), NewParameter("path", asShortString(path)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "dir exists"), NewParameter("path", asShortString(path)).withMode(x.mode))
+		}()
 		if assert.DirExists(t, path, msgAndArgs...) {
 			return
 		}
@@ -132,7 +142,9 @@ func (x Assertions) DirExists(path string, msgAndArgs ...interface{}) bool {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "dir exists")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "dir exists"), NewParameter("path", asShortString(path)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "dir exists"), NewParameter("path", asShortString(path)).withMode(x.mode))
+		}()
 		if assert.DirExists(t, path, msgAndArgs...) {
 			return
 		}
@@ -155,7 +167,9 @@ func (x Requirements) ElementsMatch(listA interface{}, listB interface{}, msgAnd
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "elements match")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "elements match"), NewParameter("list A", asShortString(listA)).withMode(x.mode), NewParameter("list B", asShortString(listB)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "elements match"), NewParameter("list A", asShortString(listA)).withMode(x.mode), NewParameter("list B", asShortString(listB)).withMode(x.mode))
+		}()
 		if assert.ElementsMatch(t, listA, listB, msgAndArgs...) {
 			return
 		}
@@ -179,7 +193,9 @@ func (x Assertions) ElementsMatch(listA interface{}, listB interface{}, msgAndAr
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "elements match")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "elements match"), NewParameter("list A", asShortString(listA)).withMode(x.mode), NewParameter("list B", asShortString(listB)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "elements match"), NewParameter("list A", asShortString(listA)).withMode(x.mode), NewParameter("list B", asShortString(listB)).withMode(x.mode))
+		}()
 		if assert.ElementsMatch(t, listA, listB, msgAndArgs...) {
 			return
 		}
@@ -210,7 +226,9 @@ func (x Requirements) Empty(object interface{}, msgAndArgs ...interface{}) {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "empty")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "empty"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "empty"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.Empty(t, object, msgAndArgs...) {
 			return
 		}
@@ -242,7 +260,9 @@ func (x Assertions) Empty(object interface{}, msgAndArgs ...interface{}) bool {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "empty")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "empty"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "empty"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.Empty(t, object, msgAndArgs...) {
 			return
 		}
@@ -267,7 +287,9 @@ func (x Requirements) Equal(expected interface{}, actual interface{}, msgAndArgs
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "equal")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "equal"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "equal"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		}()
 		if assert.Equal(t, expected, actual, msgAndArgs...) {
 			return
 		}
@@ -293,7 +315,9 @@ func (x Assertions) Equal(expected interface{}, actual interface{}, msgAndArgs .
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "equal")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "equal"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "equal"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		}()
 		if assert.Equal(t, expected, actual, msgAndArgs...) {
 			return
 		}
@@ -316,7 +340,9 @@ func (x Requirements) EqualError(theError error, errString string, msgAndArgs ..
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "equal error")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "equal error"), NewParameter("the error", asShortString(theError)).withMode(x.mode), NewParameter("err string", asShortString(errString)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "equal error"), NewParameter("the error", asShortString(theError)).withMode(x.mode), NewParameter("err string", asShortString(errString)).withMode(x.mode))
+		}()
 		if assert.EqualError(t, theError, errString, msgAndArgs...) {
 			return
 		}
@@ -340,7 +366,9 @@ func (x Assertions) EqualError(theError error, errString string, msgAndArgs ...i
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "equal error")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "equal error"), NewParameter("the error", asShortString(theError)).withMode(x.mode), NewParameter("err string", asShortString(errString)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "equal error"), NewParameter("the error", asShortString(theError)).withMode(x.mode), NewParameter("err string", asShortString(errString)).withMode(x.mode))
+		}()
 		if assert.EqualError(t, theError, errString, msgAndArgs...) {
 			return
 		}
@@ -368,7 +396,9 @@ func (x Requirements) EqualExportedValues(expected interface{}, actual interface
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "equal exported values")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "equal exported values"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "equal exported values"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		}()
 		if assert.EqualExportedValues(t, expected, actual, msgAndArgs...) {
 			return
 		}
@@ -397,7 +427,9 @@ func (x Assertions) EqualExportedValues(expected interface{}, actual interface{}
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "equal exported values")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "equal exported values"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "equal exported values"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		}()
 		if assert.EqualExportedValues(t, expected, actual, msgAndArgs...) {
 			return
 		}
@@ -419,7 +451,9 @@ func (x Requirements) EqualValues(expected interface{}, actual interface{}, msgA
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "equal values")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "equal values"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "equal values"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		}()
 		if assert.EqualValues(t, expected, actual, msgAndArgs...) {
 			return
 		}
@@ -442,7 +476,9 @@ func (x Assertions) EqualValues(expected interface{}, actual interface{}, msgAnd
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "equal values")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "equal values"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "equal values"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		}()
 		if assert.EqualValues(t, expected, actual, msgAndArgs...) {
 			return
 		}
@@ -464,7 +500,9 @@ func (x Requirements) Error(err error, msgAndArgs ...interface{}) {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "error")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "error"), NewParameter("err", asShortString(err)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "error"), NewParameter("err", asShortString(err)).withMode(x.mode))
+		}()
 		if assert.Error(t, err, msgAndArgs...) {
 			return
 		}
@@ -487,7 +525,9 @@ func (x Assertions) Error(err error, msgAndArgs ...interface{}) bool {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "error")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "error"), NewParameter("err", asShortString(err)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "error"), NewParameter("err", asShortString(err)).withMode(x.mode))
+		}()
 		if assert.Error(t, err, msgAndArgs...) {
 			return
 		}
@@ -507,7 +547,9 @@ func (x Requirements) ErrorAs(err error, target interface{}, msgAndArgs ...inter
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "error as")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "error as"), NewParameter("err", asShortString(err)).withMode(x.mode), NewParameter("target", asShortString(target)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "error as"), NewParameter("err", asShortString(err)).withMode(x.mode), NewParameter("target", asShortString(target)).withMode(x.mode))
+		}()
 		if assert.ErrorAs(t, err, target, msgAndArgs...) {
 			return
 		}
@@ -528,7 +570,9 @@ func (x Assertions) ErrorAs(err error, target interface{}, msgAndArgs ...interfa
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "error as")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "error as"), NewParameter("err", asShortString(err)).withMode(x.mode), NewParameter("target", asShortString(target)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "error as"), NewParameter("err", asShortString(err)).withMode(x.mode), NewParameter("target", asShortString(target)).withMode(x.mode))
+		}()
 		if assert.ErrorAs(t, err, target, msgAndArgs...) {
 			return
 		}
@@ -551,7 +595,9 @@ func (x Requirements) ErrorContains(theError error, contains string, msgAndArgs 
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "error contains")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "error contains"), NewParameter("the error", asShortString(theError)).withMode(x.mode), NewParameter("contains", asShortString(contains)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "error contains"), NewParameter("the error", asShortString(theError)).withMode(x.mode), NewParameter("contains", asShortString(contains)).withMode(x.mode))
+		}()
 		if assert.ErrorContains(t, theError, contains, msgAndArgs...) {
 			return
 		}
@@ -575,7 +621,9 @@ func (x Assertions) ErrorContains(theError error, contains string, msgAndArgs ..
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "error contains")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "error contains"), NewParameter("the error", asShortString(theError)).withMode(x.mode), NewParameter("contains", asShortString(contains)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "error contains"), NewParameter("the error", asShortString(theError)).withMode(x.mode), NewParameter("contains", asShortString(contains)).withMode(x.mode))
+		}()
 		if assert.ErrorContains(t, theError, contains, msgAndArgs...) {
 			return
 		}
@@ -595,7 +643,9 @@ func (x Requirements) ErrorIs(err error, target error, msgAndArgs ...interface{}
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "error is")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "error is"), NewParameter("err", asShortString(err)).withMode(x.mode), NewParameter("target", asShortString(target)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "error is"), NewParameter("err", asShortString(err)).withMode(x.mode), NewParameter("target", asShortString(target)).withMode(x.mode))
+		}()
 		if assert.ErrorIs(t, err, target, msgAndArgs...) {
 			return
 		}
@@ -616,7 +666,9 @@ func (x Assertions) ErrorIs(err error, target error, msgAndArgs ...interface{}) 
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "error is")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "error is"), NewParameter("err", asShortString(err)).withMode(x.mode), NewParameter("target", asShortString(target)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "error is"), NewParameter("err", asShortString(err)).withMode(x.mode), NewParameter("target", asShortString(target)).withMode(x.mode))
+		}()
 		if assert.ErrorIs(t, err, target, msgAndArgs...) {
 			return
 		}
@@ -638,7 +690,9 @@ func (x Requirements) Eventually(condition func() bool, waitFor time.Duration, t
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "eventually")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "eventually"), NewParameter("condition", asShortString(condition)).withMode(x.mode), NewParameter("wait for", asShortString(waitFor)).withMode(x.mode), NewParameter("tick", asShortString(tick)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "eventually"), NewParameter("condition", asShortString(condition)).withMode(x.mode), NewParameter("wait for", asShortString(waitFor)).withMode(x.mode), NewParameter("tick", asShortString(tick)).withMode(x.mode))
+		}()
 		if assert.Eventually(t, condition, waitFor, tick, msgAndArgs...) {
 			return
 		}
@@ -661,7 +715,9 @@ func (x Assertions) Eventually(condition func() bool, waitFor time.Duration, tic
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "eventually")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "eventually"), NewParameter("condition", asShortString(condition)).withMode(x.mode), NewParameter("wait for", asShortString(waitFor)).withMode(x.mode), NewParameter("tick", asShortString(tick)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "eventually"), NewParameter("condition", asShortString(condition)).withMode(x.mode), NewParameter("wait for", asShortString(waitFor)).withMode(x.mode), NewParameter("tick", asShortString(tick)).withMode(x.mode))
+		}()
 		if assert.Eventually(t, condition, waitFor, tick, msgAndArgs...) {
 			return
 		}
@@ -682,7 +738,9 @@ func (x Requirements) Exactly(expected interface{}, actual interface{}, msgAndAr
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "exactly")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "exactly"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "exactly"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		}()
 		if assert.Exactly(t, expected, actual, msgAndArgs...) {
 			return
 		}
@@ -704,7 +762,9 @@ func (x Assertions) Exactly(expected interface{}, actual interface{}, msgAndArgs
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "exactly")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "exactly"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "exactly"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		}()
 		if assert.Exactly(t, expected, actual, msgAndArgs...) {
 			return
 		}
@@ -725,7 +785,9 @@ func (x Requirements) False(value bool, msgAndArgs ...interface{}) {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "false")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "false"), NewParameter("value", asShortString(value)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "false"), NewParameter("value", asShortString(value)).withMode(x.mode))
+		}()
 		if assert.False(t, value, msgAndArgs...) {
 			return
 		}
@@ -747,7 +809,9 @@ func (x Assertions) False(value bool, msgAndArgs ...interface{}) bool {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "false")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "false"), NewParameter("value", asShortString(value)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "false"), NewParameter("value", asShortString(value)).withMode(x.mode))
+		}()
 		if assert.False(t, value, msgAndArgs...) {
 			return
 		}
@@ -767,7 +831,9 @@ func (x Requirements) FileExists(path string, msgAndArgs ...interface{}) {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "file exists")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "file exists"), NewParameter("path", asShortString(path)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "file exists"), NewParameter("path", asShortString(path)).withMode(x.mode))
+		}()
 		if assert.FileExists(t, path, msgAndArgs...) {
 			return
 		}
@@ -788,7 +854,9 @@ func (x Assertions) FileExists(path string, msgAndArgs ...interface{}) bool {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "file exists")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "file exists"), NewParameter("path", asShortString(path)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "file exists"), NewParameter("path", asShortString(path)).withMode(x.mode))
+		}()
 		if assert.FileExists(t, path, msgAndArgs...) {
 			return
 		}
@@ -811,7 +879,9 @@ func (x Requirements) Greater(e1 interface{}, e2 interface{}, msgAndArgs ...inte
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "greater")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "greater"), NewParameter("e 1", asShortString(e1)).withMode(x.mode), NewParameter("e 2", asShortString(e2)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "greater"), NewParameter("e 1", asShortString(e1)).withMode(x.mode), NewParameter("e 2", asShortString(e2)).withMode(x.mode))
+		}()
 		if assert.Greater(t, e1, e2, msgAndArgs...) {
 			return
 		}
@@ -835,7 +905,9 @@ func (x Assertions) Greater(e1 interface{}, e2 interface{}, msgAndArgs ...interf
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "greater")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "greater"), NewParameter("e 1", asShortString(e1)).withMode(x.mode), NewParameter("e 2", asShortString(e2)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "greater"), NewParameter("e 1", asShortString(e1)).withMode(x.mode), NewParameter("e 2", asShortString(e2)).withMode(x.mode))
+		}()
 		if assert.Greater(t, e1, e2, msgAndArgs...) {
 			return
 		}
@@ -859,7 +931,9 @@ func (x Requirements) GreaterOrEqual(e1 interface{}, e2 interface{}, msgAndArgs 
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "greater or equal")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "greater or equal"), NewParameter("e 1", asShortString(e1)).withMode(x.mode), NewParameter("e 2", asShortString(e2)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "greater or equal"), NewParameter("e 1", asShortString(e1)).withMode(x.mode), NewParameter("e 2", asShortString(e2)).withMode(x.mode))
+		}()
 		if assert.GreaterOrEqual(t, e1, e2, msgAndArgs...) {
 			return
 		}
@@ -884,7 +958,9 @@ func (x Assertions) GreaterOrEqual(e1 interface{}, e2 interface{}, msgAndArgs ..
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "greater or equal")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "greater or equal"), NewParameter("e 1", asShortString(e1)).withMode(x.mode), NewParameter("e 2", asShortString(e2)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "greater or equal"), NewParameter("e 1", asShortString(e1)).withMode(x.mode), NewParameter("e 2", asShortString(e2)).withMode(x.mode))
+		}()
 		if assert.GreaterOrEqual(t, e1, e2, msgAndArgs...) {
 			return
 		}
@@ -908,7 +984,9 @@ func (x Requirements) HTTPBodyContains(handler http.HandlerFunc, method string, 
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "HTTP body contains")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "HTTP body contains"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode), NewParameter("str", asShortString(str)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "HTTP body contains"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode), NewParameter("str", asShortString(str)).withMode(x.mode))
+		}()
 		if assert.HTTPBodyContains(t, handler, method, url, values, str, msgAndArgs...) {
 			return
 		}
@@ -933,7 +1011,9 @@ func (x Assertions) HTTPBodyContains(handler http.HandlerFunc, method string, ur
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "HTTP body contains")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "HTTP body contains"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode), NewParameter("str", asShortString(str)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "HTTP body contains"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode), NewParameter("str", asShortString(str)).withMode(x.mode))
+		}()
 		if assert.HTTPBodyContains(t, handler, method, url, values, str, msgAndArgs...) {
 			return
 		}
@@ -957,7 +1037,9 @@ func (x Requirements) HTTPBodyNotContains(handler http.HandlerFunc, method strin
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "HTTP body not contains")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "HTTP body not contains"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode), NewParameter("str", asShortString(str)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "HTTP body not contains"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode), NewParameter("str", asShortString(str)).withMode(x.mode))
+		}()
 		if assert.HTTPBodyNotContains(t, handler, method, url, values, str, msgAndArgs...) {
 			return
 		}
@@ -982,7 +1064,9 @@ func (x Assertions) HTTPBodyNotContains(handler http.HandlerFunc, method string,
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "HTTP body not contains")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "HTTP body not contains"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode), NewParameter("str", asShortString(str)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "HTTP body not contains"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode), NewParameter("str", asShortString(str)).withMode(x.mode))
+		}()
 		if assert.HTTPBodyNotContains(t, handler, method, url, values, str, msgAndArgs...) {
 			return
 		}
@@ -1005,7 +1089,9 @@ func (x Requirements) HTTPError(handler http.HandlerFunc, method string, url str
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "HTTP error")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "HTTP error"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "HTTP error"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode))
+		}()
 		if assert.HTTPError(t, handler, method, url, values, msgAndArgs...) {
 			return
 		}
@@ -1029,7 +1115,9 @@ func (x Assertions) HTTPError(handler http.HandlerFunc, method string, url strin
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "HTTP error")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "HTTP error"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "HTTP error"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode))
+		}()
 		if assert.HTTPError(t, handler, method, url, values, msgAndArgs...) {
 			return
 		}
@@ -1052,7 +1140,9 @@ func (x Requirements) HTTPRedirect(handler http.HandlerFunc, method string, url 
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "HTTP redirect")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "HTTP redirect"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "HTTP redirect"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode))
+		}()
 		if assert.HTTPRedirect(t, handler, method, url, values, msgAndArgs...) {
 			return
 		}
@@ -1076,7 +1166,9 @@ func (x Assertions) HTTPRedirect(handler http.HandlerFunc, method string, url st
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "HTTP redirect")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "HTTP redirect"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "HTTP redirect"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode))
+		}()
 		if assert.HTTPRedirect(t, handler, method, url, values, msgAndArgs...) {
 			return
 		}
@@ -1099,7 +1191,9 @@ func (x Requirements) HTTPStatusCode(handler http.HandlerFunc, method string, ur
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "HTTP status code")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "HTTP status code"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode), NewParameter("statuscode", asShortString(statuscode)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "HTTP status code"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode), NewParameter("statuscode", asShortString(statuscode)).withMode(x.mode))
+		}()
 		if assert.HTTPStatusCode(t, handler, method, url, values, statuscode, msgAndArgs...) {
 			return
 		}
@@ -1123,7 +1217,9 @@ func (x Assertions) HTTPStatusCode(handler http.HandlerFunc, method string, url 
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "HTTP status code")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "HTTP status code"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode), NewParameter("statuscode", asShortString(statuscode)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "HTTP status code"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode), NewParameter("statuscode", asShortString(statuscode)).withMode(x.mode))
+		}()
 		if assert.HTTPStatusCode(t, handler, method, url, values, statuscode, msgAndArgs...) {
 			return
 		}
@@ -1146,7 +1242,9 @@ func (x Requirements) HTTPSuccess(handler http.HandlerFunc, method string, url s
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "HTTP success")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "HTTP success"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "HTTP success"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode))
+		}()
 		if assert.HTTPSuccess(t, handler, method, url, values, msgAndArgs...) {
 			return
 		}
@@ -1170,7 +1268,9 @@ func (x Assertions) HTTPSuccess(handler http.HandlerFunc, method string, url str
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "HTTP success")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "HTTP success"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "HTTP success"), NewParameter("handler", asShortString(handler)).withMode(x.mode), NewParameter("method", asShortString(method)).withMode(x.mode), NewParameter("url", asShortString(url)).withMode(x.mode), NewParameter("values", asShortString(values)).withMode(x.mode))
+		}()
 		if assert.HTTPSuccess(t, handler, method, url, values, msgAndArgs...) {
 			return
 		}
@@ -1191,7 +1291,9 @@ func (x Requirements) Implements(interfaceObject interface{}, object interface{}
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "implements")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "implements"), NewParameter("interface object", asShortString(interfaceObject)).withMode(x.mode), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "implements"), NewParameter("interface object", asShortString(interfaceObject)).withMode(x.mode), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.Implements(t, interfaceObject, object, msgAndArgs...) {
 			return
 		}
@@ -1213,7 +1315,9 @@ func (x Assertions) Implements(interfaceObject interface{}, object interface{}, 
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "implements")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "implements"), NewParameter("interface object", asShortString(interfaceObject)).withMode(x.mode), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "implements"), NewParameter("interface object", asShortString(interfaceObject)).withMode(x.mode), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.Implements(t, interfaceObject, object, msgAndArgs...) {
 			return
 		}
@@ -1234,7 +1338,9 @@ func (x Requirements) InDelta(expected interface{}, actual interface{}, delta fl
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "in delta")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "in delta"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("delta", asShortString(delta)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "in delta"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("delta", asShortString(delta)).withMode(x.mode))
+		}()
 		if assert.InDelta(t, expected, actual, delta, msgAndArgs...) {
 			return
 		}
@@ -1256,7 +1362,9 @@ func (x Assertions) InDelta(expected interface{}, actual interface{}, delta floa
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "in delta")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "in delta"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("delta", asShortString(delta)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "in delta"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("delta", asShortString(delta)).withMode(x.mode))
+		}()
 		if assert.InDelta(t, expected, actual, delta, msgAndArgs...) {
 			return
 		}
@@ -1275,7 +1383,9 @@ func (x Requirements) InDeltaMapValues(expected interface{}, actual interface{},
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "in delta map values")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "in delta map values"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("delta", asShortString(delta)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "in delta map values"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("delta", asShortString(delta)).withMode(x.mode))
+		}()
 		if assert.InDeltaMapValues(t, expected, actual, delta, msgAndArgs...) {
 			return
 		}
@@ -1295,7 +1405,9 @@ func (x Assertions) InDeltaMapValues(expected interface{}, actual interface{}, d
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "in delta map values")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "in delta map values"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("delta", asShortString(delta)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "in delta map values"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("delta", asShortString(delta)).withMode(x.mode))
+		}()
 		if assert.InDeltaMapValues(t, expected, actual, delta, msgAndArgs...) {
 			return
 		}
@@ -1314,7 +1426,9 @@ func (x Requirements) InDeltaSlice(expected interface{}, actual interface{}, del
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "in delta slice")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "in delta slice"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("delta", asShortString(delta)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "in delta slice"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("delta", asShortString(delta)).withMode(x.mode))
+		}()
 		if assert.InDeltaSlice(t, expected, actual, delta, msgAndArgs...) {
 			return
 		}
@@ -1334,7 +1448,9 @@ func (x Assertions) InDeltaSlice(expected interface{}, actual interface{}, delta
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "in delta slice")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "in delta slice"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("delta", asShortString(delta)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "in delta slice"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("delta", asShortString(delta)).withMode(x.mode))
+		}()
 		if assert.InDeltaSlice(t, expected, actual, delta, msgAndArgs...) {
 			return
 		}
@@ -1353,7 +1469,9 @@ func (x Requirements) InEpsilon(expected interface{}, actual interface{}, epsilo
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "in epsilon")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "in epsilon"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("epsilon", asShortString(epsilon)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "in epsilon"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("epsilon", asShortString(epsilon)).withMode(x.mode))
+		}()
 		if assert.InEpsilon(t, expected, actual, epsilon, msgAndArgs...) {
 			return
 		}
@@ -1373,7 +1491,9 @@ func (x Assertions) InEpsilon(expected interface{}, actual interface{}, epsilon 
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "in epsilon")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "in epsilon"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("epsilon", asShortString(epsilon)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "in epsilon"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("epsilon", asShortString(epsilon)).withMode(x.mode))
+		}()
 		if assert.InEpsilon(t, expected, actual, epsilon, msgAndArgs...) {
 			return
 		}
@@ -1392,7 +1512,9 @@ func (x Requirements) InEpsilonSlice(expected interface{}, actual interface{}, e
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "in epsilon slice")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "in epsilon slice"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("epsilon", asShortString(epsilon)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "in epsilon slice"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("epsilon", asShortString(epsilon)).withMode(x.mode))
+		}()
 		if assert.InEpsilonSlice(t, expected, actual, epsilon, msgAndArgs...) {
 			return
 		}
@@ -1412,7 +1534,9 @@ func (x Assertions) InEpsilonSlice(expected interface{}, actual interface{}, eps
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "in epsilon slice")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "in epsilon slice"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("epsilon", asShortString(epsilon)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "in epsilon slice"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("epsilon", asShortString(epsilon)).withMode(x.mode))
+		}()
 		if assert.InEpsilonSlice(t, expected, actual, epsilon, msgAndArgs...) {
 			return
 		}
@@ -1435,7 +1559,9 @@ func (x Requirements) IsDecreasing(object interface{}, msgAndArgs ...interface{}
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "is decreasing")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "is decreasing"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "is decreasing"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.IsDecreasing(t, object, msgAndArgs...) {
 			return
 		}
@@ -1459,7 +1585,9 @@ func (x Assertions) IsDecreasing(object interface{}, msgAndArgs ...interface{}) 
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "is decreasing")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "is decreasing"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "is decreasing"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.IsDecreasing(t, object, msgAndArgs...) {
 			return
 		}
@@ -1482,7 +1610,9 @@ func (x Requirements) IsIncreasing(object interface{}, msgAndArgs ...interface{}
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "is increasing")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "is increasing"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "is increasing"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.IsIncreasing(t, object, msgAndArgs...) {
 			return
 		}
@@ -1506,7 +1636,9 @@ func (x Assertions) IsIncreasing(object interface{}, msgAndArgs ...interface{}) 
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "is increasing")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "is increasing"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "is increasing"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.IsIncreasing(t, object, msgAndArgs...) {
 			return
 		}
@@ -1529,7 +1661,9 @@ func (x Requirements) IsNonDecreasing(object interface{}, msgAndArgs ...interfac
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "is non decreasing")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "is non decreasing"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "is non decreasing"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.IsNonDecreasing(t, object, msgAndArgs...) {
 			return
 		}
@@ -1553,7 +1687,9 @@ func (x Assertions) IsNonDecreasing(object interface{}, msgAndArgs ...interface{
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "is non decreasing")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "is non decreasing"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "is non decreasing"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.IsNonDecreasing(t, object, msgAndArgs...) {
 			return
 		}
@@ -1576,7 +1712,9 @@ func (x Requirements) IsNonIncreasing(object interface{}, msgAndArgs ...interfac
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "is non increasing")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "is non increasing"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "is non increasing"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.IsNonIncreasing(t, object, msgAndArgs...) {
 			return
 		}
@@ -1600,7 +1738,9 @@ func (x Assertions) IsNonIncreasing(object interface{}, msgAndArgs ...interface{
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "is non increasing")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "is non increasing"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "is non increasing"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.IsNonIncreasing(t, object, msgAndArgs...) {
 			return
 		}
@@ -1621,7 +1761,9 @@ func (x Requirements) IsType(expectedType interface{}, object interface{}, msgAn
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "is type")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "is type"), NewParameter("expected type", asShortString(expectedType)).withMode(x.mode), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "is type"), NewParameter("expected type", asShortString(expectedType)).withMode(x.mode), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.IsType(t, expectedType, object, msgAndArgs...) {
 			return
 		}
@@ -1643,7 +1785,9 @@ func (x Assertions) IsType(expectedType interface{}, object interface{}, msgAndA
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "is type")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "is type"), NewParameter("expected type", asShortString(expectedType)).withMode(x.mode), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "is type"), NewParameter("expected type", asShortString(expectedType)).withMode(x.mode), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.IsType(t, expectedType, object, msgAndArgs...) {
 			return
 		}
@@ -1664,7 +1808,9 @@ func (x Requirements) JSONEq(expected string, actual string, msgAndArgs ...inter
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "JSON eq")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "JSON eq"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "JSON eq"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		}()
 		if assert.JSONEq(t, expected, actual, msgAndArgs...) {
 			return
 		}
@@ -1686,7 +1832,9 @@ func (x Assertions) JSONEq(expected string, actual string, msgAndArgs ...interfa
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "JSON eq")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "JSON eq"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "JSON eq"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		}()
 		if assert.JSONEq(t, expected, actual, msgAndArgs...) {
 			return
 		}
@@ -1708,7 +1856,9 @@ func (x Requirements) Len(object interface{}, length int, msgAndArgs ...interfac
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "len")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "len"), NewParameter("object", asShortString(object)).withMode(x.mode), NewParameter("length", asShortString(length)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "len"), NewParameter("object", asShortString(object)).withMode(x.mode), NewParameter("length", asShortString(length)).withMode(x.mode))
+		}()
 		if assert.Len(t, object, length, msgAndArgs...) {
 			return
 		}
@@ -1731,7 +1881,9 @@ func (x Assertions) Len(object interface{}, length int, msgAndArgs ...interface{
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "len")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "len"), NewParameter("object", asShortString(object)).withMode(x.mode), NewParameter("length", asShortString(length)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "len"), NewParameter("object", asShortString(object)).withMode(x.mode), NewParameter("length", asShortString(length)).withMode(x.mode))
+		}()
 		if assert.Len(t, object, length, msgAndArgs...) {
 			return
 		}
@@ -1754,7 +1906,9 @@ func (x Requirements) Less(e1 interface{}, e2 interface{}, msgAndArgs ...interfa
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "less")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "less"), NewParameter("e 1", asShortString(e1)).withMode(x.mode), NewParameter("e 2", asShortString(e2)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "less"), NewParameter("e 1", asShortString(e1)).withMode(x.mode), NewParameter("e 2", asShortString(e2)).withMode(x.mode))
+		}()
 		if assert.Less(t, e1, e2, msgAndArgs...) {
 			return
 		}
@@ -1778,7 +1932,9 @@ func (x Assertions) Less(e1 interface{}, e2 interface{}, msgAndArgs ...interface
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "less")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "less"), NewParameter("e 1", asShortString(e1)).withMode(x.mode), NewParameter("e 2", asShortString(e2)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "less"), NewParameter("e 1", asShortString(e1)).withMode(x.mode), NewParameter("e 2", asShortString(e2)).withMode(x.mode))
+		}()
 		if assert.Less(t, e1, e2, msgAndArgs...) {
 			return
 		}
@@ -1802,7 +1958,9 @@ func (x Requirements) LessOrEqual(e1 interface{}, e2 interface{}, msgAndArgs ...
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "less or equal")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "less or equal"), NewParameter("e 1", asShortString(e1)).withMode(x.mode), NewParameter("e 2", asShortString(e2)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "less or equal"), NewParameter("e 1", asShortString(e1)).withMode(x.mode), NewParameter("e 2", asShortString(e2)).withMode(x.mode))
+		}()
 		if assert.LessOrEqual(t, e1, e2, msgAndArgs...) {
 			return
 		}
@@ -1827,7 +1985,9 @@ func (x Assertions) LessOrEqual(e1 interface{}, e2 interface{}, msgAndArgs ...in
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "less or equal")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "less or equal"), NewParameter("e 1", asShortString(e1)).withMode(x.mode), NewParameter("e 2", asShortString(e2)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "less or equal"), NewParameter("e 1", asShortString(e1)).withMode(x.mode), NewParameter("e 2", asShortString(e2)).withMode(x.mode))
+		}()
 		if assert.LessOrEqual(t, e1, e2, msgAndArgs...) {
 			return
 		}
@@ -1849,7 +2009,9 @@ func (x Requirements) Negative(e interface{}, msgAndArgs ...interface{}) {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "negative")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "negative"), NewParameter("e", asShortString(e)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "negative"), NewParameter("e", asShortString(e)).withMode(x.mode))
+		}()
 		if assert.Negative(t, e, msgAndArgs...) {
 			return
 		}
@@ -1872,7 +2034,9 @@ func (x Assertions) Negative(e interface{}, msgAndArgs ...interface{}) bool {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "negative")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "negative"), NewParameter("e", asShortString(e)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "negative"), NewParameter("e", asShortString(e)).withMode(x.mode))
+		}()
 		if assert.Negative(t, e, msgAndArgs...) {
 			return
 		}
@@ -1894,7 +2058,9 @@ func (x Requirements) Never(condition func() bool, waitFor time.Duration, tick t
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "never")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "never"), NewParameter("condition", asShortString(condition)).withMode(x.mode), NewParameter("wait for", asShortString(waitFor)).withMode(x.mode), NewParameter("tick", asShortString(tick)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "never"), NewParameter("condition", asShortString(condition)).withMode(x.mode), NewParameter("wait for", asShortString(waitFor)).withMode(x.mode), NewParameter("tick", asShortString(tick)).withMode(x.mode))
+		}()
 		if assert.Never(t, condition, waitFor, tick, msgAndArgs...) {
 			return
 		}
@@ -1917,7 +2083,9 @@ func (x Assertions) Never(condition func() bool, waitFor time.Duration, tick tim
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "never")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "never"), NewParameter("condition", asShortString(condition)).withMode(x.mode), NewParameter("wait for", asShortString(waitFor)).withMode(x.mode), NewParameter("tick", asShortString(tick)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "never"), NewParameter("condition", asShortString(condition)).withMode(x.mode), NewParameter("wait for", asShortString(waitFor)).withMode(x.mode), NewParameter("tick", asShortString(tick)).withMode(x.mode))
+		}()
 		if assert.Never(t, condition, waitFor, tick, msgAndArgs...) {
 			return
 		}
@@ -1938,7 +2106,9 @@ func (x Requirements) Nil(object interface{}, msgAndArgs ...interface{}) {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "nil")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "nil"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "nil"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.Nil(t, object, msgAndArgs...) {
 			return
 		}
@@ -1960,7 +2130,9 @@ func (x Assertions) Nil(object interface{}, msgAndArgs ...interface{}) bool {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "nil")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "nil"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "nil"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.Nil(t, object, msgAndArgs...) {
 			return
 		}
@@ -1980,7 +2152,9 @@ func (x Requirements) NoDirExists(path string, msgAndArgs ...interface{}) {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "no dir exists")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "no dir exists"), NewParameter("path", asShortString(path)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "no dir exists"), NewParameter("path", asShortString(path)).withMode(x.mode))
+		}()
 		if assert.NoDirExists(t, path, msgAndArgs...) {
 			return
 		}
@@ -2001,7 +2175,9 @@ func (x Assertions) NoDirExists(path string, msgAndArgs ...interface{}) bool {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "no dir exists")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "no dir exists"), NewParameter("path", asShortString(path)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "no dir exists"), NewParameter("path", asShortString(path)).withMode(x.mode))
+		}()
 		if assert.NoDirExists(t, path, msgAndArgs...) {
 			return
 		}
@@ -2025,7 +2201,9 @@ func (x Requirements) NoError(err error, msgAndArgs ...interface{}) {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "no error")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "no error"), NewParameter("err", asShortString(err)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "no error"), NewParameter("err", asShortString(err)).withMode(x.mode))
+		}()
 		if assert.NoError(t, err, msgAndArgs...) {
 			return
 		}
@@ -2050,7 +2228,9 @@ func (x Assertions) NoError(err error, msgAndArgs ...interface{}) bool {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "no error")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "no error"), NewParameter("err", asShortString(err)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "no error"), NewParameter("err", asShortString(err)).withMode(x.mode))
+		}()
 		if assert.NoError(t, err, msgAndArgs...) {
 			return
 		}
@@ -2070,7 +2250,9 @@ func (x Requirements) NoFileExists(path string, msgAndArgs ...interface{}) {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "no file exists")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "no file exists"), NewParameter("path", asShortString(path)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "no file exists"), NewParameter("path", asShortString(path)).withMode(x.mode))
+		}()
 		if assert.NoFileExists(t, path, msgAndArgs...) {
 			return
 		}
@@ -2091,7 +2273,9 @@ func (x Assertions) NoFileExists(path string, msgAndArgs ...interface{}) bool {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "no file exists")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "no file exists"), NewParameter("path", asShortString(path)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "no file exists"), NewParameter("path", asShortString(path)).withMode(x.mode))
+		}()
 		if assert.NoFileExists(t, path, msgAndArgs...) {
 			return
 		}
@@ -2115,7 +2299,9 @@ func (x Requirements) NotContains(s interface{}, contains interface{}, msgAndArg
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not contains")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "not contains"), NewParameter("s", asShortString(s)).withMode(x.mode), NewParameter("contains", asShortString(contains)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "not contains"), NewParameter("s", asShortString(s)).withMode(x.mode), NewParameter("contains", asShortString(contains)).withMode(x.mode))
+		}()
 		if assert.NotContains(t, s, contains, msgAndArgs...) {
 			return
 		}
@@ -2140,7 +2326,9 @@ func (x Assertions) NotContains(s interface{}, contains interface{}, msgAndArgs 
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not contains")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "not contains"), NewParameter("s", asShortString(s)).withMode(x.mode), NewParameter("contains", asShortString(contains)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "not contains"), NewParameter("s", asShortString(s)).withMode(x.mode), NewParameter("contains", asShortString(contains)).withMode(x.mode))
+		}()
 		if assert.NotContains(t, s, contains, msgAndArgs...) {
 			return
 		}
@@ -2168,7 +2356,9 @@ func (x Requirements) NotElementsMatch(listA interface{}, listB interface{}, msg
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not elements match")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "not elements match"), NewParameter("list A", asShortString(listA)).withMode(x.mode), NewParameter("list B", asShortString(listB)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "not elements match"), NewParameter("list A", asShortString(listA)).withMode(x.mode), NewParameter("list B", asShortString(listB)).withMode(x.mode))
+		}()
 		if assert.NotElementsMatch(t, listA, listB, msgAndArgs...) {
 			return
 		}
@@ -2197,7 +2387,9 @@ func (x Assertions) NotElementsMatch(listA interface{}, listB interface{}, msgAn
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not elements match")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "not elements match"), NewParameter("list A", asShortString(listA)).withMode(x.mode), NewParameter("list B", asShortString(listB)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "not elements match"), NewParameter("list A", asShortString(listA)).withMode(x.mode), NewParameter("list B", asShortString(listB)).withMode(x.mode))
+		}()
 		if assert.NotElementsMatch(t, listA, listB, msgAndArgs...) {
 			return
 		}
@@ -2220,7 +2412,9 @@ func (x Requirements) NotEmpty(object interface{}, msgAndArgs ...interface{}) {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not empty")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "not empty"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "not empty"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.NotEmpty(t, object, msgAndArgs...) {
 			return
 		}
@@ -2244,7 +2438,9 @@ func (x Assertions) NotEmpty(object interface{}, msgAndArgs ...interface{}) bool
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not empty")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "not empty"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "not empty"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.NotEmpty(t, object, msgAndArgs...) {
 			return
 		}
@@ -2268,7 +2464,9 @@ func (x Requirements) NotEqual(expected interface{}, actual interface{}, msgAndA
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not equal")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "not equal"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "not equal"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		}()
 		if assert.NotEqual(t, expected, actual, msgAndArgs...) {
 			return
 		}
@@ -2293,7 +2491,9 @@ func (x Assertions) NotEqual(expected interface{}, actual interface{}, msgAndArg
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not equal")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "not equal"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "not equal"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		}()
 		if assert.NotEqual(t, expected, actual, msgAndArgs...) {
 			return
 		}
@@ -2314,7 +2514,9 @@ func (x Requirements) NotEqualValues(expected interface{}, actual interface{}, m
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not equal values")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "not equal values"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "not equal values"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		}()
 		if assert.NotEqualValues(t, expected, actual, msgAndArgs...) {
 			return
 		}
@@ -2336,7 +2538,9 @@ func (x Assertions) NotEqualValues(expected interface{}, actual interface{}, msg
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not equal values")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "not equal values"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "not equal values"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		}()
 		if assert.NotEqualValues(t, expected, actual, msgAndArgs...) {
 			return
 		}
@@ -2356,7 +2560,9 @@ func (x Requirements) NotErrorAs(err error, target interface{}, msgAndArgs ...in
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not error as")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "not error as"), NewParameter("err", asShortString(err)).withMode(x.mode), NewParameter("target", asShortString(target)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "not error as"), NewParameter("err", asShortString(err)).withMode(x.mode), NewParameter("target", asShortString(target)).withMode(x.mode))
+		}()
 		if assert.NotErrorAs(t, err, target, msgAndArgs...) {
 			return
 		}
@@ -2377,7 +2583,9 @@ func (x Assertions) NotErrorAs(err error, target interface{}, msgAndArgs ...inte
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not error as")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "not error as"), NewParameter("err", asShortString(err)).withMode(x.mode), NewParameter("target", asShortString(target)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "not error as"), NewParameter("err", asShortString(err)).withMode(x.mode), NewParameter("target", asShortString(target)).withMode(x.mode))
+		}()
 		if assert.NotErrorAs(t, err, target, msgAndArgs...) {
 			return
 		}
@@ -2397,7 +2605,9 @@ func (x Requirements) NotErrorIs(err error, target error, msgAndArgs ...interfac
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not error is")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "not error is"), NewParameter("err", asShortString(err)).withMode(x.mode), NewParameter("target", asShortString(target)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "not error is"), NewParameter("err", asShortString(err)).withMode(x.mode), NewParameter("target", asShortString(target)).withMode(x.mode))
+		}()
 		if assert.NotErrorIs(t, err, target, msgAndArgs...) {
 			return
 		}
@@ -2418,7 +2628,9 @@ func (x Assertions) NotErrorIs(err error, target error, msgAndArgs ...interface{
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not error is")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "not error is"), NewParameter("err", asShortString(err)).withMode(x.mode), NewParameter("target", asShortString(target)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "not error is"), NewParameter("err", asShortString(err)).withMode(x.mode), NewParameter("target", asShortString(target)).withMode(x.mode))
+		}()
 		if assert.NotErrorIs(t, err, target, msgAndArgs...) {
 			return
 		}
@@ -2439,7 +2651,9 @@ func (x Requirements) NotImplements(interfaceObject interface{}, object interfac
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not implements")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "not implements"), NewParameter("interface object", asShortString(interfaceObject)).withMode(x.mode), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "not implements"), NewParameter("interface object", asShortString(interfaceObject)).withMode(x.mode), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.NotImplements(t, interfaceObject, object, msgAndArgs...) {
 			return
 		}
@@ -2461,7 +2675,9 @@ func (x Assertions) NotImplements(interfaceObject interface{}, object interface{
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not implements")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "not implements"), NewParameter("interface object", asShortString(interfaceObject)).withMode(x.mode), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "not implements"), NewParameter("interface object", asShortString(interfaceObject)).withMode(x.mode), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.NotImplements(t, interfaceObject, object, msgAndArgs...) {
 			return
 		}
@@ -2482,7 +2698,9 @@ func (x Requirements) NotNil(object interface{}, msgAndArgs ...interface{}) {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not nil")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "not nil"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "not nil"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.NotNil(t, object, msgAndArgs...) {
 			return
 		}
@@ -2504,7 +2722,9 @@ func (x Assertions) NotNil(object interface{}, msgAndArgs ...interface{}) bool {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not nil")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "not nil"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "not nil"), NewParameter("object", asShortString(object)).withMode(x.mode))
+		}()
 		if assert.NotNil(t, object, msgAndArgs...) {
 			return
 		}
@@ -2525,7 +2745,9 @@ func (x Requirements) NotPanics(f assert.PanicTestFunc, msgAndArgs ...interface{
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not panics")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "not panics"), NewParameter("f", asShortString(f)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "not panics"), NewParameter("f", asShortString(f)).withMode(x.mode))
+		}()
 		if assert.NotPanics(t, f, msgAndArgs...) {
 			return
 		}
@@ -2547,7 +2769,9 @@ func (x Assertions) NotPanics(f assert.PanicTestFunc, msgAndArgs ...interface{})
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not panics")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "not panics"), NewParameter("f", asShortString(f)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "not panics"), NewParameter("f", asShortString(f)).withMode(x.mode))
+		}()
 		if assert.NotPanics(t, f, msgAndArgs...) {
 			return
 		}
@@ -2569,7 +2793,9 @@ func (x Requirements) NotRegexp(rx interface{}, str interface{}, msgAndArgs ...i
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not regexp")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "not regexp"), NewParameter("rx", asShortString(rx)).withMode(x.mode), NewParameter("str", asShortString(str)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "not regexp"), NewParameter("rx", asShortString(rx)).withMode(x.mode), NewParameter("str", asShortString(str)).withMode(x.mode))
+		}()
 		if assert.NotRegexp(t, rx, str, msgAndArgs...) {
 			return
 		}
@@ -2592,7 +2818,9 @@ func (x Assertions) NotRegexp(rx interface{}, str interface{}, msgAndArgs ...int
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not regexp")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "not regexp"), NewParameter("rx", asShortString(rx)).withMode(x.mode), NewParameter("str", asShortString(str)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "not regexp"), NewParameter("rx", asShortString(rx)).withMode(x.mode), NewParameter("str", asShortString(str)).withMode(x.mode))
+		}()
 		if assert.NotRegexp(t, rx, str, msgAndArgs...) {
 			return
 		}
@@ -2616,7 +2844,9 @@ func (x Requirements) NotSame(expected interface{}, actual interface{}, msgAndAr
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not same")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "not same"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "not same"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		}()
 		if assert.NotSame(t, expected, actual, msgAndArgs...) {
 			return
 		}
@@ -2641,7 +2871,9 @@ func (x Assertions) NotSame(expected interface{}, actual interface{}, msgAndArgs
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not same")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "not same"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "not same"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		}()
 		if assert.NotSame(t, expected, actual, msgAndArgs...) {
 			return
 		}
@@ -2668,7 +2900,9 @@ func (x Requirements) NotSubset(list interface{}, subset interface{}, msgAndArgs
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not subset")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "not subset"), NewParameter("list", asShortString(list)).withMode(x.mode), NewParameter("subset", asShortString(subset)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "not subset"), NewParameter("list", asShortString(list)).withMode(x.mode), NewParameter("subset", asShortString(subset)).withMode(x.mode))
+		}()
 		if assert.NotSubset(t, list, subset, msgAndArgs...) {
 			return
 		}
@@ -2696,7 +2930,9 @@ func (x Assertions) NotSubset(list interface{}, subset interface{}, msgAndArgs .
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not subset")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "not subset"), NewParameter("list", asShortString(list)).withMode(x.mode), NewParameter("subset", asShortString(subset)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "not subset"), NewParameter("list", asShortString(list)).withMode(x.mode), NewParameter("subset", asShortString(subset)).withMode(x.mode))
+		}()
 		if assert.NotSubset(t, list, subset, msgAndArgs...) {
 			return
 		}
@@ -2715,7 +2951,9 @@ func (x Requirements) NotZero(i interface{}, msgAndArgs ...interface{}) {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not zero")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "not zero"), NewParameter("i", asShortString(i)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "not zero"), NewParameter("i", asShortString(i)).withMode(x.mode))
+		}()
 		if assert.NotZero(t, i, msgAndArgs...) {
 			return
 		}
@@ -2735,7 +2973,9 @@ func (x Assertions) NotZero(i interface{}, msgAndArgs ...interface{}) bool {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "not zero")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "not zero"), NewParameter("i", asShortString(i)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "not zero"), NewParameter("i", asShortString(i)).withMode(x.mode))
+		}()
 		if assert.NotZero(t, i, msgAndArgs...) {
 			return
 		}
@@ -2756,7 +2996,9 @@ func (x Requirements) Panics(f assert.PanicTestFunc, msgAndArgs ...interface{}) 
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "panics")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "panics"), NewParameter("f", asShortString(f)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "panics"), NewParameter("f", asShortString(f)).withMode(x.mode))
+		}()
 		if assert.Panics(t, f, msgAndArgs...) {
 			return
 		}
@@ -2778,7 +3020,9 @@ func (x Assertions) Panics(f assert.PanicTestFunc, msgAndArgs ...interface{}) bo
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "panics")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "panics"), NewParameter("f", asShortString(f)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "panics"), NewParameter("f", asShortString(f)).withMode(x.mode))
+		}()
 		if assert.Panics(t, f, msgAndArgs...) {
 			return
 		}
@@ -2801,7 +3045,9 @@ func (x Requirements) PanicsWithError(errString string, f assert.PanicTestFunc, 
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "panics with error")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "panics with error"), NewParameter("err string", asShortString(errString)).withMode(x.mode), NewParameter("f", asShortString(f)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "panics with error"), NewParameter("err string", asShortString(errString)).withMode(x.mode), NewParameter("f", asShortString(f)).withMode(x.mode))
+		}()
 		if assert.PanicsWithError(t, errString, f, msgAndArgs...) {
 			return
 		}
@@ -2825,7 +3071,9 @@ func (x Assertions) PanicsWithError(errString string, f assert.PanicTestFunc, ms
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "panics with error")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "panics with error"), NewParameter("err string", asShortString(errString)).withMode(x.mode), NewParameter("f", asShortString(f)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "panics with error"), NewParameter("err string", asShortString(errString)).withMode(x.mode), NewParameter("f", asShortString(f)).withMode(x.mode))
+		}()
 		if assert.PanicsWithError(t, errString, f, msgAndArgs...) {
 			return
 		}
@@ -2847,7 +3095,9 @@ func (x Requirements) PanicsWithValue(expected interface{}, f assert.PanicTestFu
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "panics with value")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "panics with value"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("f", asShortString(f)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "panics with value"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("f", asShortString(f)).withMode(x.mode))
+		}()
 		if assert.PanicsWithValue(t, expected, f, msgAndArgs...) {
 			return
 		}
@@ -2870,7 +3120,9 @@ func (x Assertions) PanicsWithValue(expected interface{}, f assert.PanicTestFunc
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "panics with value")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "panics with value"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("f", asShortString(f)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "panics with value"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("f", asShortString(f)).withMode(x.mode))
+		}()
 		if assert.PanicsWithValue(t, expected, f, msgAndArgs...) {
 			return
 		}
@@ -2892,7 +3144,9 @@ func (x Requirements) Positive(e interface{}, msgAndArgs ...interface{}) {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "positive")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "positive"), NewParameter("e", asShortString(e)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "positive"), NewParameter("e", asShortString(e)).withMode(x.mode))
+		}()
 		if assert.Positive(t, e, msgAndArgs...) {
 			return
 		}
@@ -2915,7 +3169,9 @@ func (x Assertions) Positive(e interface{}, msgAndArgs ...interface{}) bool {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "positive")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "positive"), NewParameter("e", asShortString(e)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "positive"), NewParameter("e", asShortString(e)).withMode(x.mode))
+		}()
 		if assert.Positive(t, e, msgAndArgs...) {
 			return
 		}
@@ -2937,7 +3193,9 @@ func (x Requirements) Regexp(rx interface{}, str interface{}, msgAndArgs ...inte
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "regexp")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "regexp"), NewParameter("rx", asShortString(rx)).withMode(x.mode), NewParameter("str", asShortString(str)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "regexp"), NewParameter("rx", asShortString(rx)).withMode(x.mode), NewParameter("str", asShortString(str)).withMode(x.mode))
+		}()
 		if assert.Regexp(t, rx, str, msgAndArgs...) {
 			return
 		}
@@ -2960,7 +3218,9 @@ func (x Assertions) Regexp(rx interface{}, str interface{}, msgAndArgs ...interf
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "regexp")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "regexp"), NewParameter("rx", asShortString(rx)).withMode(x.mode), NewParameter("str", asShortString(str)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "regexp"), NewParameter("rx", asShortString(rx)).withMode(x.mode), NewParameter("str", asShortString(str)).withMode(x.mode))
+		}()
 		if assert.Regexp(t, rx, str, msgAndArgs...) {
 			return
 		}
@@ -2984,7 +3244,9 @@ func (x Requirements) Same(expected interface{}, actual interface{}, msgAndArgs 
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "same")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "same"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "same"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		}()
 		if assert.Same(t, expected, actual, msgAndArgs...) {
 			return
 		}
@@ -3009,7 +3271,9 @@ func (x Assertions) Same(expected interface{}, actual interface{}, msgAndArgs ..
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "same")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "same"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "same"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		}()
 		if assert.Same(t, expected, actual, msgAndArgs...) {
 			return
 		}
@@ -3036,7 +3300,9 @@ func (x Requirements) Subset(list interface{}, subset interface{}, msgAndArgs ..
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "subset")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "subset"), NewParameter("list", asShortString(list)).withMode(x.mode), NewParameter("subset", asShortString(subset)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "subset"), NewParameter("list", asShortString(list)).withMode(x.mode), NewParameter("subset", asShortString(subset)).withMode(x.mode))
+		}()
 		if assert.Subset(t, list, subset, msgAndArgs...) {
 			return
 		}
@@ -3064,7 +3330,9 @@ func (x Assertions) Subset(list interface{}, subset interface{}, msgAndArgs ...i
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "subset")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "subset"), NewParameter("list", asShortString(list)).withMode(x.mode), NewParameter("subset", asShortString(subset)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "subset"), NewParameter("list", asShortString(list)).withMode(x.mode), NewParameter("subset", asShortString(subset)).withMode(x.mode))
+		}()
 		if assert.Subset(t, list, subset, msgAndArgs...) {
 			return
 		}
@@ -3085,7 +3353,9 @@ func (x Requirements) True(value bool, msgAndArgs ...interface{}) {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "true")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "true"), NewParameter("value", asShortString(value)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "true"), NewParameter("value", asShortString(value)).withMode(x.mode))
+		}()
 		if assert.True(t, value, msgAndArgs...) {
 			return
 		}
@@ -3107,7 +3377,9 @@ func (x Assertions) True(value bool, msgAndArgs ...interface{}) bool {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "true")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "true"), NewParameter("value", asShortString(value)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "true"), NewParameter("value", asShortString(value)).withMode(x.mode))
+		}()
 		if assert.True(t, value, msgAndArgs...) {
 			return
 		}
@@ -3128,7 +3400,9 @@ func (x Requirements) WithinDuration(expected time.Time, actual time.Time, delta
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "within duration")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "within duration"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("delta", asShortString(delta)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "within duration"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("delta", asShortString(delta)).withMode(x.mode))
+		}()
 		if assert.WithinDuration(t, expected, actual, delta, msgAndArgs...) {
 			return
 		}
@@ -3150,7 +3424,9 @@ func (x Assertions) WithinDuration(expected time.Time, actual time.Time, delta t
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "within duration")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "within duration"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("delta", asShortString(delta)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "within duration"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("delta", asShortString(delta)).withMode(x.mode))
+		}()
 		if assert.WithinDuration(t, expected, actual, delta, msgAndArgs...) {
 			return
 		}
@@ -3171,7 +3447,9 @@ func (x Requirements) WithinRange(actual time.Time, start time.Time, end time.Ti
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "within range")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "within range"), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("start", asShortString(start)).withMode(x.mode), NewParameter("end", asShortString(end)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "within range"), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("start", asShortString(start)).withMode(x.mode), NewParameter("end", asShortString(end)).withMode(x.mode))
+		}()
 		if assert.WithinRange(t, actual, start, end, msgAndArgs...) {
 			return
 		}
@@ -3193,7 +3471,9 @@ func (x Assertions) WithinRange(actual time.Time, start time.Time, end time.Time
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "within range")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "within range"), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("start", asShortString(start)).withMode(x.mode), NewParameter("end", asShortString(end)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "within range"), NewParameter("actual", asShortString(actual)).withMode(x.mode), NewParameter("start", asShortString(start)).withMode(x.mode), NewParameter("end", asShortString(end)).withMode(x.mode))
+		}()
 		if assert.WithinRange(t, actual, start, end, msgAndArgs...) {
 			return
 		}
@@ -3212,7 +3492,9 @@ func (x Requirements) YAMLEq(expected string, actual string, msgAndArgs ...inter
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "YAML eq")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "YAML eq"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "YAML eq"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		}()
 		if assert.YAMLEq(t, expected, actual, msgAndArgs...) {
 			return
 		}
@@ -3232,7 +3514,9 @@ func (x Assertions) YAMLEq(expected string, actual string, msgAndArgs ...interfa
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "YAML eq")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "YAML eq"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "YAML eq"), NewParameter("expected", asShortString(expected)).withMode(x.mode), NewParameter("actual", asShortString(actual)).withMode(x.mode))
+		}()
 		if assert.YAMLEq(t, expected, actual, msgAndArgs...) {
 			return
 		}
@@ -3251,7 +3535,9 @@ func (x Requirements) Zero(i interface{}, msgAndArgs ...interface{}) {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "zero")
 	Step(x.t, "require: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("require", "zero"), NewParameter("i", asShortString(i)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("require", "zero"), NewParameter("i", asShortString(i)).withMode(x.mode))
+		}()
 		if assert.Zero(t, i, msgAndArgs...) {
 			return
 		}
@@ -3271,7 +3557,9 @@ func (x Assertions) Zero(i interface{}, msgAndArgs ...interface{}) bool {
 	name := cmp.Or(messageFromMsgAndArgs(msgAndArgs...), "zero")
 	return testo.Run(x.t, "assert: "+name, func(t *PluginAllure) {
 		t.Helper()
-		t.Parameters(NewParameter("assert", "zero"), NewParameter("i", asShortString(i)).withMode(x.mode))
+		defer func() {
+			t.Parameters(NewParameter("assert", "zero"), NewParameter("i", asShortString(i)).withMode(x.mode))
+		}()
 		if assert.Zero(t, i, msgAndArgs...) {
 			return
 		}
