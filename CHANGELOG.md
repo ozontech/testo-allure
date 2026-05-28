@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Expose `MaxAttachmentSize` for reflection.
 
+### Fixed
+
+- Defer setting parameters for assertions to avoid side-effects.
+
 ## [1.1.0] - 2026-05-26
 
 ### Added

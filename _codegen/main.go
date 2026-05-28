@@ -192,36 +192,38 @@ func generateAssertion(f *jen.File, assertion Assertion, require bool) {
 			jen.Func().Params(jen.Id("t").Id("*PluginAllure")).BlockFunc(func(g *jen.Group) {
 				g.Id("t").Dot("Helper").Call()
 
-				g.Id("t").Dot("Parameters").CallFunc(func(g *jen.Group) {
-					g.Id("NewParameter").
-						Call(
-							jen.LitFunc(func() any {
-								if require {
-									return "require"
-								}
-
-								return "assert"
-							}),
-							jen.Lit(camelCaseToSentence(assertion.Name)),
-						)
-
-					for i, p := range assertion.Params {
-						// ignore last param
-						if i == len(assertion.Params)-1 {
-							break
-						}
-
-						name := p.Name()
-
+				g.Defer().Func().Params().BlockFunc(func(g *jen.Group) {
+					g.Id("t").Dot("Parameters").CallFunc(func(g *jen.Group) {
 						g.Id("NewParameter").
 							Call(
-								jen.Lit(camelCaseToSentence(name)),
-								jen.Id("asShortString").Call(jen.Id(name)),
-							).
-							Dot("withMode").
-							Call(jen.Id(recv).Dot("mode"))
-					}
-				})
+								jen.LitFunc(func() any {
+									if require {
+										return "require"
+									}
+
+									return "assert"
+								}),
+								jen.Lit(camelCaseToSentence(assertion.Name)),
+							)
+
+						for i, p := range assertion.Params {
+							// ignore last param
+							if i == len(assertion.Params)-1 {
+								break
+							}
+
+							name := p.Name()
+
+							g.Id("NewParameter").
+								Call(
+									jen.Lit(camelCaseToSentence(name)),
+									jen.Id("asShortString").Call(jen.Id(name)),
+								).
+								Dot("withMode").
+								Call(jen.Id(recv).Dot("mode"))
+						}
+					})
+				}).Call()
 
 				assert := jen.
 					Qual("github.com/stretchr/testify/assert", assertion.Name).
