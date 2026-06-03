@@ -475,7 +475,7 @@ func (a *PluginAllure) status() Status {
 	if a.Failed() {
 		r := testo.Reflect(a)
 
-		// do top level hooks (Before,AfterAll)
+		// treat top level hooks (Before,AfterAll) differently
 		if r.Test.GetLevel() == 0 && r.FailureSource != testoreflect.TestFailureSourceSelf {
 			return StatusPassed
 		}
@@ -793,7 +793,13 @@ func (a *PluginAllure) afterAll() {
 		res.Stop = unixMilli(timing.Stop.UnixMilli())
 
 		for _, s := range steps {
-			res.Steps = append(res.Steps, s.asStep())
+			asStep := s.asStep()
+
+			res.Steps = append(res.Steps, asStep)
+
+			if res.Status == StatusPassed && asStep.Status == StatusFailed {
+				res.Status = StatusFailed
+			}
 		}
 
 		if err := writeResult(a.outputDir, res); err != nil {
