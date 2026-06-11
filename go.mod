@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/gabriel-vasile/mimetype v1.4.11
-	github.com/ozontech/testo v1.2.0
+	github.com/ozontech/testo v1.4.0
 	github.com/stretchr/testify v1.11.1
 )
 

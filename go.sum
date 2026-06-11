@@ -4,6 +4,8 @@ github.com/gabriel-vasile/mimetype v1.4.11 h1:AQvxbp830wPhHTqc1u7nzoLT+ZFxGY7emj
 github.com/gabriel-vasile/mimetype v1.4.11/go.mod h1:d+9Oxyo1wTzWdyVUPMmXFvp4F9tea18J8ufA774AB3s=
 github.com/ozontech/testo v1.2.0 h1:WBYYWgW3yKuGmFuB+jbQ6jWcseC3pnsP6YD1bw+hC+0=
 github.com/ozontech/testo v1.2.0/go.mod h1:BxVrtOfDZlotYKtHu2u/+kH6qhUDZUBld6/MFa3VvVU=
+github.com/ozontech/testo v1.4.0 h1:jL5hBboNqdS84iMg6Vag8+1xgTTUgSJM1nlXO/RGEu0=
+github.com/ozontech/testo v1.4.0/go.mod h1:s775ZROFWI3t52FxFRNu2t3rCgCsot9kuVur3hoKfB4=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
