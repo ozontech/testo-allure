@@ -876,25 +876,10 @@ func (a *PluginAllure) afterAll() {
 }
 
 func (a *PluginAllure) beforeEach() {
-	var (
-		cancel   context.CancelFunc = func() {}
-		timedOut atomic.Bool
-	)
-
-	a.Cleanup(func() {
-		defer cancel()
-
-		if timedOut.Load() {
-			return
-		}
-
-		a.afterEach()
-	})
-
 	if deadline, ok := a.Deadline(); ok {
-		ctx := context.Background()
+		ctx, cancel := context.WithCancel(context.Background())
 
-		ctx, cancel = context.WithCancel(ctx)
+		a.Cleanup(cancel)
 
 		go func() {
 			defer cancel()
@@ -907,14 +892,16 @@ func (a *PluginAllure) beforeEach() {
 
 			select {
 			case <-ctx.Done():
-			case <-time.After(until):
-				timedOut.Store(true)
+				a.afterEach()
 
+			case <-time.After(until):
 				a.Errorf("test timed out after %s", until.Round(100*time.Millisecond))
 				a.Status(StatusBroken)
 				a.afterEach()
 			}
 		}()
+	} else {
+		a.Cleanup(a.afterEach)
 	}
 
 	if a.parent != nil {
