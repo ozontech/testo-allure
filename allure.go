@@ -878,8 +878,10 @@ func (a *PluginAllure) afterAll() {
 }
 
 func (a *PluginAllure) beforeEach() {
-	var cancel context.CancelFunc = func() {}
-	var timedOut atomic.Bool
+	var (
+		cancel   context.CancelFunc = func() {}
+		timedOut atomic.Bool
+	)
 
 	a.Cleanup(func() {
 		defer cancel()
