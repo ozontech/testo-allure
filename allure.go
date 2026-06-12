@@ -36,9 +36,9 @@ const (
 	permDir  os.FileMode = 0o750
 )
 
-// deadlineGap is a heuristic time window when we decide to
+// deadlineWindow is a heuristic time window when we decide to
 // write afterEach hook just before test timeout is triggered.
-const deadlineGap = 100 * time.Millisecond
+const deadlineWindow = 100 * time.Millisecond
 
 //go:generate go tool ifacemaker -f $GOFILE -o interface.go -s PluginAllure -i Interface -p $GOPACKAGE -e Plugin -y "Interface defines allure plugin interface.\nUseful for writing helpers which require allure methods but can't rely on concrete type." -x -e panicked -e status -e asResult -e parameters -e links -e attachments -e allRawAttachments -e title -e asStep -e timeBoundaries -e steps -e containers -e beforeEach -e afterEach -e hooks -e addMessage -e addTrace -e overrides -e results -e resultsGroupParametrized -e afterAll -e writeResults -e writeContainers -e writeAttachments -e writeAttachment -e writeProperties -e writeCategories -e labels -e attachmentPath -e baseName -e testCaseID -e historyID -e resultsFlattenParametrized -e statusDetails -e suiteName -e plugin -e beforeAll -e cleanup -e writeReport -e plan -e applyOptions -e fullName -e createOutputDir -e asContainer -e beforeEachSub -e afterEachSub -e propagatedStatusDetails -e hookDescendants -e descendants -e testChildren -e hasTestNeighbors -e subtest -e attach -e parentSuiteName
 
@@ -879,23 +879,23 @@ func (a *PluginAllure) beforeEach() {
 	if deadline, ok := a.Deadline(); ok {
 		ctx, cancel := context.WithCancel(context.Background())
 
-		a.Cleanup(cancel)
+		a.Cleanup(func() { <-ctx.Done() }) // halt test completion
 
 		go func() {
 			defer cancel()
 
-			until := time.Until(deadline) - deadlineGap
+			maxDuration := time.Until(deadline) - deadlineWindow
 
-			// go test runners immediately kills testing processes at specified deadline.
-			// even cleanup functions won't run, therefore we need
-			// write a test report for the current test just before this process is killed.
+			// test runner immediately kills testing functions at specified deadline.
+			// even cleanup functions won't run, therefore we need to
+			// write a test report for the current test just before this test is killed.
 
 			select {
-			case <-ctx.Done():
+			case <-a.Context().Done():
 				a.afterEach()
 
-			case <-time.After(until):
-				a.Errorf("test timed out after %s", until.Round(100*time.Millisecond))
+			case <-time.After(maxDuration):
+				a.Errorf("test timed out after %s", maxDuration.Round(100*time.Millisecond))
 				a.Status(StatusBroken)
 				a.afterEach()
 			}
