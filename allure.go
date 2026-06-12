@@ -63,7 +63,7 @@ type PluginAllure struct {
 	uuid UUID
 
 	timeTest      timeBoundary
-	timeBeforeAll timeBoundary
+	timeBeforeAll syncutil.MutexGuarded[timeBoundary]
 	timeAfterAll  syncutil.MutexGuarded[timeBoundary]
 
 	// used for BeforeAll hooks to set stop once when first test is run
@@ -116,6 +116,10 @@ type PluginAllure struct {
 	queuedTearDowns syncutil.MutexGuarded[[]*PluginAllure]
 
 	maxAttachmentSize int64
+
+	testsStarted  atomic.Bool
+	testTimedOut  atomic.Bool
+	hooksTimedOut atomic.Bool
 }
 
 // Plugin implements [testoplugin.Plugin].
@@ -749,13 +753,43 @@ func (a *PluginAllure) asContainer() (container, bool) {
 }
 
 func (a *PluginAllure) beforeAll() {
-	a.Cleanup(a.afterAll)
+	if deadline, ok := a.Deadline(); ok {
+		ctx, cancel := context.WithCancel(context.Background())
+
+		a.Cleanup(func() { <-ctx.Done() })
+
+		go func() {
+			defer cancel()
+
+			maxDuration := time.Until(deadline) - deadlineWindow/2
+
+			select {
+			case <-a.Context().Done():
+				a.afterAll()
+
+			case <-time.After(maxDuration):
+				if a.testTimedOut.Load() {
+					return
+				}
+
+				a.hooksTimedOut.Store(true)
+
+				a.Errorf("suite timed out after %s", maxDuration.Round(100*time.Millisecond))
+				a.Status(StatusBroken)
+				a.afterAll()
+			}
+		}()
+	} else {
+		a.Cleanup(a.afterAll)
+	}
 
 	if err := writeCategories(a.outputDir, a.categories); err != nil {
 		a.Logf("failed to write categories: %v", err)
 	}
 
-	a.timeBeforeAll.Start = time.Now()
+	a.timeBeforeAll.Modify(func(value *timeBoundary) {
+		value.Start = time.Now()
+	})
 }
 
 //nolint:funlen,cyclop // splitting would make less readable, probably
@@ -764,7 +798,9 @@ func (a *PluginAllure) afterAll() {
 
 	// in case it was not set from tests (no tests)
 	a.setBeforeAllStopOnce.Do(func() {
-		a.timeBeforeAll.Stop = now
+		a.timeBeforeAll.Modify(func(value *timeBoundary) {
+			value.Stop = now
+		})
 	})
 
 	a.timeAfterAll.Modify(func(value *timeBoundary) {
@@ -817,15 +853,35 @@ func (a *PluginAllure) afterAll() {
 
 		hooks := testo.Reflect(a).Suite.Hooks
 
+		const (
+			hookBeforeAll       = "Before All"
+			hookAfterAll        = "After All"
+			hooksBeforeAfterAll = "Before & After All"
+		)
+
 		switch {
 		case !hooks.MissedBeforeAll && !hooks.MissedAfterAll:
-			stop := a.timeBeforeAll.Stop
-			if !stop.Equal(a.timeAfterAll.Load().Stop) {
-				stop = stop.Add(a.timeAfterAll.Load().Duration())
+			beforeAll := a.timeBeforeAll.Load()
+			afterAll := a.timeAfterAll.Load()
+
+			stop := beforeAll.Stop
+
+			if !stop.Equal(afterAll.Stop) && !afterAll.Start.IsZero() {
+				stop = stop.Add(afterAll.Duration())
 			}
 
-			standalone("Before & After All", all, timeBoundary{
-				Start: a.timeBeforeAll.Start,
+			if stop.IsZero() {
+				stop = time.Now()
+			}
+
+			name := hooksBeforeAfterAll
+
+			if a.hooksTimedOut.Load() && !a.testsStarted.Load() {
+				name = hookBeforeAll
+			}
+
+			standalone(name, all, timeBoundary{
+				Start: beforeAll.Start,
 				// even though this is not technically correct,
 				// as actual end time would equal to just timeAfterAll.Stop
 				// this timings are primarely used for duration, not for stop & end stamps.
@@ -834,10 +890,10 @@ func (a *PluginAllure) afterAll() {
 			})
 
 		case !hooks.MissedBeforeAll:
-			standalone("Before All", all, a.timeBeforeAll)
+			standalone(hookBeforeAll, all, a.timeBeforeAll.Load())
 
 		case !hooks.MissedAfterAll:
-			standalone("After All", all, a.timeAfterAll.Load())
+			standalone(hookAfterAll, all, a.timeAfterAll.Load())
 		}
 	}
 
@@ -876,6 +932,10 @@ func (a *PluginAllure) afterAll() {
 }
 
 func (a *PluginAllure) beforeEach() {
+	if a.parent != nil {
+		a.parent.testsStarted.Store(true)
+	}
+
 	if deadline, ok := a.Deadline(); ok {
 		ctx, cancel := context.WithCancel(context.Background())
 
@@ -895,6 +955,10 @@ func (a *PluginAllure) beforeEach() {
 				a.afterEach()
 
 			case <-time.After(maxDuration):
+				if a.parent != nil {
+					a.parent.testTimedOut.Store(true)
+				}
+
 				a.Errorf("test timed out after %s", maxDuration.Round(100*time.Millisecond))
 				a.Status(StatusBroken)
 				a.afterEach()
@@ -905,7 +969,13 @@ func (a *PluginAllure) beforeEach() {
 	}
 
 	if a.parent != nil {
-		a.parent.setBeforeAllStopOnce.Do(func() { a.parent.timeBeforeAll.Stop = time.Now() })
+		a.parent.setBeforeAllStopOnce.Do(func() {
+			now := time.Now()
+
+			a.parent.timeBeforeAll.Modify(func(value *timeBoundary) {
+				value.Stop = now
+			})
+		})
 	}
 
 	inspect := testo.Reflect(a.T)
