@@ -36,6 +36,10 @@ const (
 	permDir  os.FileMode = 0o750
 )
 
+// deadlineGap is a time window when we decide to
+// write afterEach hook just before test timeout is triggered.
+const deadlineGap = 100 * time.Millisecond
+
 // TODO(metafates): use tools.go pattern or go tool command when this plugin is moved into separate repo.
 
 //go:generate ifacemaker -f $GOFILE -o interface.go -s PluginAllure -i Interface -p $GOPACKAGE -e Plugin -y "Interface defines allure plugin interface.\nUseful for writing helpers which require allure methods but can't rely on concrete type." -x -e panicked -e status -e asResult -e parameters -e links -e attachments -e allRawAttachments -e title -e asStep -e timeBoundaries -e steps -e containers -e beforeEach -e afterEach -e hooks -e addMessage -e addTrace -e overrides -e results -e resultsGroupParametrized -e afterAll -e writeResults -e writeContainers -e writeAttachments -e writeAttachment -e writeProperties -e writeCategories -e labels -e attachmentPath -e baseName -e testCaseID -e historyID -e resultsFlattenParametrized -e statusDetails -e suiteName -e plugin -e beforeAll -e cleanup -e writeReport -e plan -e applyOptions -e fullName -e createOutputDir -e asContainer -e beforeEachSub -e afterEachSub -e propagatedStatusDetails -e hookDescendants -e descendants -e testChildren -e hasTestNeighbors -e subtest -e attach -e parentSuiteName
@@ -874,7 +878,40 @@ func (a *PluginAllure) afterAll() {
 }
 
 func (a *PluginAllure) beforeEach() {
-	a.Cleanup(a.afterEach)
+	var cancel context.CancelFunc = func() {}
+	var timedOut atomic.Bool
+
+	a.Cleanup(func() {
+		defer cancel()
+
+		if timedOut.Load() {
+			return
+		}
+
+		a.afterEach()
+	})
+
+	if deadline, ok := a.Deadline(); ok {
+		ctx := context.Background()
+
+		ctx, cancel = context.WithCancel(ctx)
+
+		go func() {
+			defer cancel()
+
+			until := time.Until(deadline) - deadlineGap
+
+			select {
+			case <-ctx.Done():
+			case <-time.After(until):
+				timedOut.Store(true)
+
+				a.Errorf("test timed out after %s", until.Round(100*time.Millisecond))
+				a.Status(StatusBroken)
+				a.afterEach()
+			}
+		}()
+	}
 
 	if a.parent != nil {
 		a.parent.setBeforeAllStopOnce.Do(func() {
