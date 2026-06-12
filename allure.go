@@ -36,13 +36,11 @@ const (
 	permDir  os.FileMode = 0o750
 )
 
-// deadlineGap is a time window when we decide to
+// deadlineGap is a heuristic time window when we decide to
 // write afterEach hook just before test timeout is triggered.
 const deadlineGap = 100 * time.Millisecond
 
-// TODO(metafates): use tools.go pattern or go tool command when this plugin is moved into separate repo.
-
-//go:generate ifacemaker -f $GOFILE -o interface.go -s PluginAllure -i Interface -p $GOPACKAGE -e Plugin -y "Interface defines allure plugin interface.\nUseful for writing helpers which require allure methods but can't rely on concrete type." -x -e panicked -e status -e asResult -e parameters -e links -e attachments -e allRawAttachments -e title -e asStep -e timeBoundaries -e steps -e containers -e beforeEach -e afterEach -e hooks -e addMessage -e addTrace -e overrides -e results -e resultsGroupParametrized -e afterAll -e writeResults -e writeContainers -e writeAttachments -e writeAttachment -e writeProperties -e writeCategories -e labels -e attachmentPath -e baseName -e testCaseID -e historyID -e resultsFlattenParametrized -e statusDetails -e suiteName -e plugin -e beforeAll -e cleanup -e writeReport -e plan -e applyOptions -e fullName -e createOutputDir -e asContainer -e beforeEachSub -e afterEachSub -e propagatedStatusDetails -e hookDescendants -e descendants -e testChildren -e hasTestNeighbors -e subtest -e attach -e parentSuiteName
+//go:generate go tool ifacemaker -f $GOFILE -o interface.go -s PluginAllure -i Interface -p $GOPACKAGE -e Plugin -y "Interface defines allure plugin interface.\nUseful for writing helpers which require allure methods but can't rely on concrete type." -x -e panicked -e status -e asResult -e parameters -e links -e attachments -e allRawAttachments -e title -e asStep -e timeBoundaries -e steps -e containers -e beforeEach -e afterEach -e hooks -e addMessage -e addTrace -e overrides -e results -e resultsGroupParametrized -e afterAll -e writeResults -e writeContainers -e writeAttachments -e writeAttachment -e writeProperties -e writeCategories -e labels -e attachmentPath -e baseName -e testCaseID -e historyID -e resultsFlattenParametrized -e statusDetails -e suiteName -e plugin -e beforeAll -e cleanup -e writeReport -e plan -e applyOptions -e fullName -e createOutputDir -e asContainer -e beforeEachSub -e afterEachSub -e propagatedStatusDetails -e hookDescendants -e descendants -e testChildren -e hasTestNeighbors -e subtest -e attach -e parentSuiteName
 
 var _ Interface = (*PluginAllure)(nil)
 
@@ -903,6 +901,10 @@ func (a *PluginAllure) beforeEach() {
 
 			until := time.Until(deadline) - deadlineGap
 
+			// go test runners immediately kills testing processes at specified deadline.
+			// even cleanup functions won't run, therefore we need
+			// write a test report for the current test just before this process is killed.
+
 			select {
 			case <-ctx.Done():
 			case <-time.After(until):
@@ -916,9 +918,7 @@ func (a *PluginAllure) beforeEach() {
 	}
 
 	if a.parent != nil {
-		a.parent.setBeforeAllStopOnce.Do(func() {
-			a.parent.timeBeforeAll.Stop = time.Now()
-		})
+		a.parent.setBeforeAllStopOnce.Do(func() { a.parent.timeBeforeAll.Stop = time.Now() })
 	}
 
 	inspect := testo.Reflect(a.T)
