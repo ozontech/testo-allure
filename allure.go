@@ -965,11 +965,13 @@ func (a *PluginAllure) afterAll() {
 			fallthrough
 
 		case !hooks.MissedAfterAll:
-			fmt.Println()
+			if a.testTimedOut.Load() {
+				break
+			}
 
 			var status *Status
 
-			if a.timedOut.Load() && !a.testTimedOut.Load() {
+			if a.timedOut.Load() {
 				s := StatusBroken
 
 				status = &s
