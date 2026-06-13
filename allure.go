@@ -36,9 +36,13 @@ const (
 	permDir  os.FileMode = 0o750
 )
 
-// deadlineWindow is a heuristic time window when we decide to
-// write afterEach hook just before test timeout is triggered.
-const deadlineWindow = 100 * time.Millisecond
+// heuristic time windows when we decide to
+// write afterXxx hooks just before test timeout is triggered.
+const (
+	suiteDeadlineWindow = 50 * time.Millisecond
+	testDeadlineWindow  = 75 * time.Millisecond
+	stepDeadlineWindow  = 100 * time.Millisecond
+)
 
 //go:generate go tool ifacemaker -f $GOFILE -o interface.go -s PluginAllure -i Interface -p $GOPACKAGE -e Plugin -y "Interface defines allure plugin interface.\nUseful for writing helpers which require allure methods but can't rely on concrete type." -x -e panicked -e status -e asResult -e parameters -e links -e attachments -e allRawAttachments -e title -e asStep -e timeBoundaries -e steps -e containers -e beforeEach -e afterEach -e hooks -e addMessage -e addTrace -e overrides -e results -e resultsGroupParametrized -e afterAll -e writeResults -e writeContainers -e writeAttachments -e writeAttachment -e writeProperties -e writeCategories -e labels -e attachmentPath -e baseName -e testCaseID -e historyID -e resultsFlattenParametrized -e statusDetails -e suiteName -e plugin -e beforeAll -e cleanup -e writeReport -e plan -e applyOptions -e fullName -e createOutputDir -e asContainer -e beforeEachSub -e afterEachSub -e propagatedStatusDetails -e hookDescendants -e descendants -e testChildren -e hasTestNeighbors -e subtest -e attach -e parentSuiteName
 
@@ -117,9 +121,12 @@ type PluginAllure struct {
 
 	maxAttachmentSize int64
 
-	testsStarted  atomic.Bool
-	testTimedOut  atomic.Bool
-	hooksTimedOut atomic.Bool
+	testsRunning atomic.Int64
+	testsStarted atomic.Bool
+	testTimedOut atomic.Bool
+	stepTimedOut atomic.Bool
+
+	timedOut atomic.Bool
 
 	running atomic.Bool
 }
@@ -773,21 +780,24 @@ func (a *PluginAllure) beforeAll() {
 		go func() {
 			defer cancel()
 
-			maxDuration := time.Until(deadline) - deadlineWindow/2
+			maxDuration := time.Until(deadline) - suiteDeadlineWindow/2
 
 			select {
 			case <-a.Context().Done():
 				a.afterAll()
 
 			case <-time.After(maxDuration):
-				if a.testTimedOut.Load() {
-					return
+				a.timedOut.Store(true)
+
+				if !a.testTimedOut.Load() && !a.stepTimedOut.Load() {
+					a.Errorf("suite timed out after %s", maxDuration.Round(100*time.Millisecond))
+					a.Status(StatusBroken)
 				}
 
-				a.hooksTimedOut.Store(true)
+				if a.testsRunning.Load() == 0 {
+					a.Status(StatusBroken)
+				}
 
-				a.Errorf("suite timed out after %s", maxDuration.Round(100*time.Millisecond))
-				a.Status(StatusBroken)
 				a.afterAll()
 			}
 		}()
@@ -892,7 +902,11 @@ func (a *PluginAllure) afterAll() {
 
 			name := hooksBeforeAfterAll
 
-			if a.hooksTimedOut.Load() && !a.testsStarted.Load() {
+			if a.timedOut.Load() && !a.testsStarted.Load() {
+				name = hookBeforeAll
+			}
+
+			if a.testsRunning.Load() > 0 {
 				name = hookBeforeAll
 			}
 
@@ -950,6 +964,7 @@ func (a *PluginAllure) afterAll() {
 func (a *PluginAllure) beforeEach() {
 	if a.parent != nil {
 		a.parent.testsStarted.Store(true)
+		a.parent.testsRunning.Add(1)
 	}
 
 	if deadline, ok := a.Deadline(); ok {
@@ -960,7 +975,7 @@ func (a *PluginAllure) beforeEach() {
 		go func() {
 			defer cancel()
 
-			maxDuration := time.Until(deadline) - deadlineWindow
+			maxDuration := time.Until(deadline) - testDeadlineWindow
 
 			// test runner immediately kills testing functions at specified deadline.
 			// even cleanup functions won't run, therefore we need to
@@ -971,11 +986,16 @@ func (a *PluginAllure) beforeEach() {
 				a.afterEach()
 
 			case <-time.After(maxDuration):
+				a.timedOut.Store(true)
+
 				if a.parent != nil {
 					a.parent.testTimedOut.Store(true)
 				}
 
-				a.Errorf("test timed out after %s", maxDuration.Round(100*time.Millisecond))
+				if !a.stepTimedOut.Load() {
+					a.Errorf("test timed out after %s", maxDuration.Round(100*time.Millisecond))
+				}
+
 				a.Status(StatusBroken)
 				a.afterEach()
 			}
@@ -1018,7 +1038,47 @@ func (a *PluginAllure) beforeEach() {
 }
 
 func (a *PluginAllure) beforeEachSub() {
-	a.Cleanup(a.afterEachSub)
+	if deadline, ok := a.Deadline(); ok {
+		ctx, cancel := context.WithCancel(context.Background())
+
+		a.Cleanup(func() { <-ctx.Done() }) // halt test completion
+
+		reflection := testo.Reflect(a)
+
+		level := reflection.Test.GetLevel()
+
+		const perLevel = 5 * time.Millisecond
+
+		go func() {
+			defer cancel()
+
+			maxDuration := time.Until(deadline) - stepDeadlineWindow - perLevel*time.Duration(level)
+
+			select {
+			// can't use a.Context() because it is overriden for steps
+			// to inherit Done() channel from parent, meaning its done
+			// when parent is done which we don't want here.
+			case <-reflection.TestingT.Context().Done():
+				a.afterEachSub()
+
+			case <-time.After(maxDuration):
+				a.timedOut.Store(true)
+
+				if a.parent != nil {
+					a.parent.stepTimedOut.Store(true)
+				}
+
+				if !a.stepTimedOut.Load() {
+					a.Errorf("step timed out after %s", maxDuration.Round(100*time.Millisecond))
+				}
+
+				a.Status(StatusBroken)
+				a.afterEachSub()
+			}
+		}()
+	} else {
+		a.Cleanup(a.afterEachSub)
+	}
 
 	a.running.Store(true)
 
@@ -1070,6 +1130,10 @@ func (a *PluginAllure) afterEach() {
 
 	if a.parent != nil {
 		now := time.Now()
+
+		if !a.timedOut.Load() {
+			a.parent.testsRunning.Add(-1)
+		}
 
 		a.parent.timeAfterAll.Modify(func(value *timeBoundary) {
 			if value.Start.Compare(now) < 0 {
