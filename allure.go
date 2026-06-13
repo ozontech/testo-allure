@@ -958,9 +958,15 @@ func (a *PluginAllure) afterAll() {
 
 			standalone(hookBeforeAll, setups, a.timeBeforeAll.Load(), status)
 
+			if hooks.MissedAfterAll {
+				break
+			}
+
 			fallthrough
 
 		case !hooks.MissedAfterAll:
+			fmt.Println()
+
 			var status *Status
 
 			if a.timedOut.Load() && !a.testTimedOut.Load() {
