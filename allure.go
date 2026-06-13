@@ -62,7 +62,7 @@ type PluginAllure struct {
 
 	uuid UUID
 
-	timeTest      timeBoundary
+	timeTest      syncutil.MutexGuarded[timeBoundary]
 	timeBeforeAll syncutil.MutexGuarded[timeBoundary]
 	timeAfterAll  syncutil.MutexGuarded[timeBoundary]
 
@@ -120,6 +120,8 @@ type PluginAllure struct {
 	testsStarted  atomic.Bool
 	testTimedOut  atomic.Bool
 	hooksTimedOut atomic.Bool
+
+	running atomic.Bool
 }
 
 // Plugin implements [testoplugin.Plugin].
@@ -474,7 +476,10 @@ func (a *PluginAllure) status() Status {
 		return status
 	}
 
-	if a.panicked() {
+	// if test is still running it means we are forming
+	// a report before full completion, which is possible only
+	// during timeout.
+	if a.running.Load() || a.panicked() {
 		return StatusBroken
 	}
 
@@ -636,8 +641,15 @@ func (a *PluginAllure) asStep() step {
 }
 
 func (a *PluginAllure) timeBoundaries() (start, stop unixMilli) {
-	start = unixMilli(a.timeTest.Start.Add(-a.beforeParallel).UnixMilli())
-	stop = unixMilli(a.timeTest.Stop.UnixMilli())
+	test := a.timeTest.Load()
+
+	// when timed-out
+	if test.Stop.IsZero() {
+		test.Stop = time.Now()
+	}
+
+	start = unixMilli(test.Start.Add(-a.beforeParallel).UnixMilli())
+	stop = unixMilli(test.Stop.UnixMilli())
 
 	return start, stop
 }
@@ -787,6 +799,8 @@ func (a *PluginAllure) beforeAll() {
 		a.Logf("failed to write categories: %v", err)
 	}
 
+	a.running.Store(true)
+
 	a.timeBeforeAll.Modify(func(value *timeBoundary) {
 		value.Start = time.Now()
 	})
@@ -794,6 +808,8 @@ func (a *PluginAllure) beforeAll() {
 
 //nolint:funlen,cyclop // splitting would make less readable, probably
 func (a *PluginAllure) afterAll() {
+	a.running.Store(false)
+
 	now := time.Now()
 
 	// in case it was not set from tests (no tests)
@@ -994,13 +1010,21 @@ func (a *PluginAllure) beforeEach() {
 		a.Parameters(params...)
 	}
 
-	a.timeTest.Start = time.Now()
+	a.running.Store(true)
+
+	a.timeTest.Modify(func(value *timeBoundary) {
+		value.Start = time.Now()
+	})
 }
 
 func (a *PluginAllure) beforeEachSub() {
 	a.Cleanup(a.afterEachSub)
 
-	a.timeTest.Start = time.Now()
+	a.running.Store(true)
+
+	a.timeTest.Modify(func(value *timeBoundary) {
+		value.Start = time.Now()
+	})
 }
 
 var propertiesWritten sync.Map
@@ -1008,7 +1032,13 @@ var propertiesWritten sync.Map
 func (a *PluginAllure) afterEach() {
 	a.Helper()
 
-	a.timeTest.Stop = time.Now()
+	a.running.Store(false)
+
+	now := time.Now()
+
+	a.timeTest.Modify(func(value *timeBoundary) {
+		value.Stop = now
+	})
 
 	inspect := testo.Reflect(a.T)
 
@@ -1052,7 +1082,11 @@ func (a *PluginAllure) afterEach() {
 func (a *PluginAllure) afterEachSub() {
 	a.Helper()
 
-	a.timeTest.Stop = time.Now()
+	a.running.Store(false)
+
+	a.timeTest.Modify(func(value *timeBoundary) {
+		value.Stop = time.Now()
+	})
 
 	inspect := testo.Reflect(a.T)
 
@@ -1366,13 +1400,16 @@ func (a *PluginAllure) overrides() testoplugin.Overrides {
 			return func() {
 				// if start is zero it means we are inside a BeforeEach hook of other plugin.
 				// in that case, real test has not started yet, so we shouldn't compute beforeParallel timing.
-				if !a.timeTest.Start.IsZero() {
-					a.beforeParallel = time.Since(a.timeTest.Start)
+				test := a.timeTest.Load()
+				if !test.Start.IsZero() {
+					a.beforeParallel = time.Since(test.Start)
 				}
 
 				f()
 
-				a.timeTest.Start = time.Now()
+				a.timeTest.Modify(func(value *timeBoundary) {
+					value.Start = time.Now()
+				})
 			}
 		},
 	}
