@@ -806,7 +806,7 @@ func (a *PluginAllure) beforeAll() {
 					// mark this as failed (it'll be marked as broken later).
 					a.Status(a.realStatus())
 
-					a.Errorf("suite timed out after %s", maxDuration.Round(deadlineRound))
+					a.Errorf("timed out after %s", maxDuration.Round(deadlineRound))
 				}
 
 				a.afterAll()
@@ -1039,7 +1039,7 @@ func (a *PluginAllure) beforeEach() {
 				}
 
 				if !a.stepTimedOut.Load() {
-					a.Errorf("test timed out after %s", maxDuration.Round(deadlineRound))
+					a.Errorf("timed out after %s", maxDuration.Round(deadlineRound))
 				}
 
 				a.Status(StatusBroken)
@@ -1115,7 +1115,7 @@ func (a *PluginAllure) beforeEachSub() {
 				}
 
 				if !a.stepTimedOut.Load() {
-					a.Errorf("step timed out after %s", maxDuration.Round(deadlineRound))
+					a.Errorf("timed out after %s", maxDuration.Round(deadlineRound))
 				}
 
 				a.Status(StatusBroken)
