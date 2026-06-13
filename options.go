@@ -39,6 +39,14 @@ func WithLinkTransformer(f LinkTransformerFunc) testoplugin.Option {
 	}
 }
 
+// WithGroupHooks configures BeforeAll & AfterAll hooks groupping
+// in the allure report.
+//
+// When enabled, if suite defines both of these hooks,
+// they will be groupped in a single test named "Before & After All".
+// Otherwise, it's two separate tests "Before All" and "After All".
+//
+// By default, it's enabled.
 func WithGroupHooks(group bool) testoplugin.Option {
 	return testoplugin.Option{
 		Value: option(func(a *PluginAllure) {
