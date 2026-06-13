@@ -124,7 +124,6 @@ type PluginAllure struct {
 
 	maxAttachmentSize int64
 
-	testsRunning atomic.Int64
 	testsStarted atomic.Bool
 	testTimedOut atomic.Bool
 	stepTimedOut atomic.Bool
@@ -921,7 +920,7 @@ func (a *PluginAllure) afterAll() {
 				name = hookBeforeAll
 			}
 
-			if a.testsRunning.Load() > 0 {
+			if a.testTimedOut.Load() {
 				name = hookBeforeAll
 			}
 
@@ -1018,7 +1017,6 @@ func (a *PluginAllure) afterAll() {
 func (a *PluginAllure) beforeEach() {
 	if a.parent != nil {
 		a.parent.testsStarted.Store(true)
-		a.parent.testsRunning.Add(1)
 	}
 
 	if deadline, ok := a.Deadline(); ok {
@@ -1184,10 +1182,6 @@ func (a *PluginAllure) afterEach() {
 
 	if a.parent != nil {
 		now := time.Now()
-
-		if !a.timedOut.Load() {
-			a.parent.testsRunning.Add(-1)
-		}
 
 		a.parent.timeAfterAll.Modify(func(value *timeBoundary) {
 			if value.Start.Compare(now) < 0 {
