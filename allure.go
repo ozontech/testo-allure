@@ -104,6 +104,7 @@ type PluginAllure struct {
 	inAssertion            atomic.Bool
 	inStep                 atomic.Bool
 	deduplicateAttachments bool
+	groupHooks             bool
 
 	owner           syncutil.AtomicValue[string]
 	epic            syncutil.AtomicValue[string]
@@ -458,6 +459,7 @@ func (a *PluginAllure) plugin(
 	a.uuid = uuid.New().String()
 	a.outputDir = *flagDir
 	a.inverted = *flagInvert
+	a.groupHooks = true
 
 	a.applyOptions(options)
 
@@ -486,7 +488,15 @@ func (a *PluginAllure) status() Status {
 	// if test is still running it means we are forming
 	// a report before full completion, which is possible only
 	// during timeout.
-	if a.running.Load() || a.panicked() {
+	if a.running.Load() {
+		return StatusBroken
+	}
+
+	return a.realStatus()
+}
+
+func (a *PluginAllure) realStatus() Status {
+	if a.panicked() {
 		return StatusBroken
 	}
 
@@ -780,7 +790,7 @@ func (a *PluginAllure) beforeAll() {
 		go func() {
 			defer cancel()
 
-			maxDuration := time.Until(deadline) - suiteDeadlineWindow/2
+			maxDuration := time.Until(deadline) - suiteDeadlineWindow
 
 			select {
 			case <-a.Context().Done():
@@ -790,12 +800,11 @@ func (a *PluginAllure) beforeAll() {
 				a.timedOut.Store(true)
 
 				if !a.testTimedOut.Load() && !a.stepTimedOut.Load() {
-					a.Errorf("suite timed out after %s", maxDuration.Round(100*time.Millisecond))
-					a.Status(StatusBroken)
-				}
+					// fix current status so that call to error won't actually
+					// mark this as failed (it'll be marked as broken later).
+					a.Status(a.realStatus())
 
-				if a.testsRunning.Load() == 0 {
-					a.Status(StatusBroken)
+					a.Errorf("suite timed out after %s", maxDuration.Round(100*time.Millisecond))
 				}
 
 				a.afterAll()
@@ -842,8 +851,17 @@ func (a *PluginAllure) afterAll() {
 
 	tests := a.testChildren()
 
-	standalone := func(hook string, steps []*PluginAllure, timing timeBoundary) {
+	standalone := func(hook string, steps []*PluginAllure, timing timeBoundary, status *Status) {
 		res := a.asResult()
+
+		if status != nil {
+			res.Status = *status
+		}
+
+		if res.Status == StatusPassed {
+			res.StatusDetails.Message = ""
+			res.StatusDetails.Trace = ""
+		}
 
 		res.Name = hook
 
@@ -872,11 +890,6 @@ func (a *PluginAllure) afterAll() {
 	}
 
 	{
-		all := make([]*PluginAllure, 0, len(setups)+len(tearDowns))
-
-		all = append(all, setups...)
-		all = append(all, tearDowns...)
-
 		hooks := testo.Reflect(a).Suite.Hooks
 
 		const (
@@ -886,7 +899,7 @@ func (a *PluginAllure) afterAll() {
 		)
 
 		switch {
-		case !hooks.MissedBeforeAll && !hooks.MissedAfterAll:
+		case !hooks.MissedBeforeAll && !hooks.MissedAfterAll && a.groupHooks:
 			beforeAll := a.timeBeforeAll.Load()
 			afterAll := a.timeAfterAll.Load()
 
@@ -910,20 +923,51 @@ func (a *PluginAllure) afterAll() {
 				name = hookBeforeAll
 			}
 
+			all := make([]*PluginAllure, 0, len(setups)+len(tearDowns))
+
+			all = append(all, setups...)
+			all = append(all, tearDowns...)
+
+			var status *Status
+
+			if a.timedOut.Load() && !a.testTimedOut.Load() {
+				s := StatusBroken
+
+				status = &s
+			}
+
 			standalone(name, all, timeBoundary{
 				Start: beforeAll.Start,
 				// even though this is not technically correct,
 				// as actual end time would equal to just timeAfterAll.Stop
-				// this timings are primarely used for duration, not for stop & end stamps.
+				// this timings are primarily used for duration, not for stop & end stamps.
 				// so to make duration more accurate, we should just add duration of AfterAll.
 				Stop: stop,
-			})
+			}, status)
 
 		case !hooks.MissedBeforeAll:
-			standalone(hookBeforeAll, all, a.timeBeforeAll.Load())
+			var status *Status
+
+			if a.timedOut.Load() && !a.testsStarted.Load() {
+				s := StatusBroken
+
+				status = &s
+			}
+
+			standalone(hookBeforeAll, setups, a.timeBeforeAll.Load(), status)
+
+			fallthrough
 
 		case !hooks.MissedAfterAll:
-			standalone(hookAfterAll, all, a.timeAfterAll.Load())
+			var status *Status
+
+			if a.timedOut.Load() && !a.testTimedOut.Load() {
+				s := StatusBroken
+
+				status = &s
+			}
+
+			standalone(hookAfterAll, tearDowns, a.timeAfterAll.Load(), status)
 		}
 	}
 
@@ -1828,24 +1872,4 @@ func (a *PluginAllure) propagatedStatusDetails(descendants []*PluginAllure) Stat
 		Message: strings.Join(messages, "\n\n\n"),
 		Trace:   strings.Join(traces, "\n\n\n"),
 	}
-}
-
-func trimmedAttachment(
-	data []byte,
-	mediaType MediaType,
-	limit int64,
-) AttachmentBytes {
-	if len(data) <= int(limit) {
-		return Bytes(data).As(mediaType)
-	}
-
-	// we can't use format like "want %d, got %d" because len(data)
-	// isn't always a "full" attachment.
-
-	suffix := fmt.Sprintf("...\n\n...size exceeds %d bytes limit", limit)
-
-	data = data[:limit]
-	data = append(data, suffix...)
-
-	return Bytes(data).As(TextPlain)
 }

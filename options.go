@@ -39,6 +39,14 @@ func WithLinkTransformer(f LinkTransformerFunc) testoplugin.Option {
 	}
 }
 
+func WithGroupHooks(group bool) testoplugin.Option {
+	return testoplugin.Option{
+		Value: option(func(a *PluginAllure) {
+			a.groupHooks = group
+		}),
+	}
+}
+
 // WithCategories adds [custom categories] to the report.
 // This option should be passed to the top-level [testo.RunSuite] call.
 //

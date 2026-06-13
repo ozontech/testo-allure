@@ -443,3 +443,23 @@ func guessMediaTypeFile(path string) MediaType {
 
 	return MediaType(m)
 }
+
+func trimmedAttachment(
+	data []byte,
+	mediaType MediaType,
+	limit int64,
+) AttachmentBytes {
+	if len(data) <= int(limit) {
+		return Bytes(data).As(mediaType)
+	}
+
+	// we can't use format like "want %d, got %d" because len(data)
+	// isn't always a "full" attachment.
+
+	suffix := fmt.Sprintf("...\n\n...size exceeds %d bytes limit", limit)
+
+	data = data[:limit]
+	data = append(data, suffix...)
+
+	return Bytes(data).As(TextPlain)
+}
