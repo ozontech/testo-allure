@@ -460,7 +460,6 @@ func (a *PluginAllure) plugin(
 	a.outputDir = *flagDir
 	a.inverted = *flagInvert
 	a.groupHooks = true
-	a.handleTimeouts = true
 
 	a.applyOptions(options)
 

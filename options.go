@@ -39,15 +39,15 @@ func WithLinkTransformer(f LinkTransformerFunc) testoplugin.Option {
 	}
 }
 
-// WithTimeouts enables test timeout handling.
+// WithTimeout enables test timeout handling.
 // When enabled, allure plugin will mark all
 // running tests and steps as broken just a few milliseconds
 // before [`t.Deadline`] and write their reports.
 //
-// By default, it's enabled.
+// By default, it's disabled.
 //
 // [`t.Deadline`]: https://pkg.go.dev/github.com/ozontech/testo#T.Deadline
-func WithTimeouts(enable bool) testoplugin.Option {
+func WithTimeout(enable bool) testoplugin.Option {
 	return testoplugin.Option{
 		Propagate: true,
 		Value: option(func(a *PluginAllure) {
