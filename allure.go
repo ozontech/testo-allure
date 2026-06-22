@@ -105,6 +105,7 @@ type PluginAllure struct {
 	inStep                 atomic.Bool
 	deduplicateAttachments bool
 	groupHooks             bool
+	handleTimeouts         bool
 
 	owner           syncutil.AtomicValue[string]
 	epic            syncutil.AtomicValue[string]
@@ -459,6 +460,7 @@ func (a *PluginAllure) plugin(
 	a.outputDir = *flagDir
 	a.inverted = *flagInvert
 	a.groupHooks = true
+	a.handleTimeouts = true
 
 	a.applyOptions(options)
 
@@ -781,7 +783,7 @@ func (a *PluginAllure) asContainer() (container, bool) {
 }
 
 func (a *PluginAllure) beforeAll() {
-	if deadline, ok := a.Deadline(); ok {
+	if deadline, ok := a.Deadline(); ok && a.handleTimeouts {
 		ctx, cancel := context.WithCancel(context.Background())
 
 		a.Cleanup(func() { <-ctx.Done() })
@@ -824,7 +826,7 @@ func (a *PluginAllure) beforeAll() {
 	})
 }
 
-//nolint:funlen,cyclop // splitting would make less readable, probably
+//nolint:funlen,cyclop,gocyclo,gocognit // splitting would make less readable, probably
 func (a *PluginAllure) afterAll() {
 	a.running.Store(false)
 
@@ -1012,12 +1014,13 @@ func (a *PluginAllure) afterAll() {
 	}
 }
 
+//nolint:cyclop,funlen // TODO: split into subfunctions.
 func (a *PluginAllure) beforeEach() {
 	if a.parent != nil {
 		a.parent.testsStarted.Store(true)
 	}
 
-	if deadline, ok := a.Deadline(); ok {
+	if deadline, ok := a.Deadline(); ok && a.handleTimeouts {
 		ctx, cancel := context.WithCancel(context.Background())
 
 		a.Cleanup(func() { <-ctx.Done() }) // halt test completion
@@ -1088,7 +1091,7 @@ func (a *PluginAllure) beforeEach() {
 }
 
 func (a *PluginAllure) beforeEachSub() {
-	if deadline, ok := a.Deadline(); ok {
+	if deadline, ok := a.Deadline(); ok && a.handleTimeouts {
 		ctx, cancel := context.WithCancel(context.Background())
 
 		a.Cleanup(func() { <-ctx.Done() }) // halt test completion

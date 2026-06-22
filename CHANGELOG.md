@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Reports for timed-out tests and hooks.
 - Option `WithGroupHooks` to configure `BeforeAll` & `AfterAll` hooks groupping in reports.
+- Option `WithTimeouts` to disable timeout handling.
 
 ## [1.2.2] - 2026-06-18
 
