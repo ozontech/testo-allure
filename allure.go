@@ -36,9 +36,15 @@ const (
 	permDir  os.FileMode = 0o750
 )
 
-// TODO(metafates): use tools.go pattern or go tool command when this plugin is moved into separate repo.
+// heuristic time windows when we decide to
+// write afterXxx hooks just before test timeout is triggered.
+const (
+	suiteDeadlineWindow = 25 * time.Millisecond
+	testDeadlineWindow  = 50 * time.Millisecond
+	stepDeadlineWindow  = 75 * time.Millisecond
+)
 
-//go:generate ifacemaker -f $GOFILE -o interface.go -s PluginAllure -i Interface -p $GOPACKAGE -e Plugin -y "Interface defines allure plugin interface.\nUseful for writing helpers which require allure methods but can't rely on concrete type." -x -e panicked -e status -e asResult -e parameters -e links -e attachments -e allRawAttachments -e title -e asStep -e timeBoundaries -e steps -e containers -e beforeEach -e afterEach -e hooks -e addMessage -e addTrace -e overrides -e results -e resultsGroupParametrized -e afterAll -e writeResults -e writeContainers -e writeAttachments -e writeAttachment -e writeProperties -e writeCategories -e labels -e attachmentPath -e baseName -e testCaseID -e historyID -e resultsFlattenParametrized -e statusDetails -e suiteName -e plugin -e beforeAll -e cleanup -e writeReport -e plan -e applyOptions -e fullName -e createOutputDir -e asContainer -e beforeEachSub -e afterEachSub -e propagatedStatusDetails -e hookDescendants -e descendants -e testChildren -e hasTestNeighbors -e subtest -e attach -e parentSuiteName
+//go:generate go tool ifacemaker -f $GOFILE -o interface.go -s PluginAllure -i Interface -p $GOPACKAGE -e Plugin -y "Interface defines allure plugin interface.\nUseful for writing helpers which require allure methods but can't rely on concrete type." -x -e panicked -e status -e asResult -e parameters -e links -e attachments -e allRawAttachments -e title -e asStep -e timeBoundaries -e steps -e containers -e beforeEach -e afterEach -e hooks -e addMessage -e addTrace -e overrides -e results -e resultsGroupParametrized -e afterAll -e writeResults -e writeContainers -e writeAttachments -e writeAttachment -e writeProperties -e writeCategories -e labels -e attachmentPath -e baseName -e testCaseID -e historyID -e resultsFlattenParametrized -e statusDetails -e suiteName -e plugin -e beforeAll -e cleanup -e writeReport -e plan -e applyOptions -e fullName -e createOutputDir -e asContainer -e beforeEachSub -e afterEachSub -e propagatedStatusDetails -e hookDescendants -e descendants -e testChildren -e hasTestNeighbors -e subtest -e attach -e parentSuiteName -e realStatus
 
 var _ Interface = (*PluginAllure)(nil)
 
@@ -60,8 +66,8 @@ type PluginAllure struct {
 
 	uuid UUID
 
-	timeTest      timeBoundary
-	timeBeforeAll timeBoundary
+	timeTest      syncutil.MutexGuarded[timeBoundary]
+	timeBeforeAll syncutil.MutexGuarded[timeBoundary]
 	timeAfterAll  syncutil.MutexGuarded[timeBoundary]
 
 	// used for BeforeAll hooks to set stop once when first test is run
@@ -98,6 +104,8 @@ type PluginAllure struct {
 	inAssertion            atomic.Bool
 	inStep                 atomic.Bool
 	deduplicateAttachments bool
+	groupHooks             bool
+	handleTimeouts         bool
 
 	owner           syncutil.AtomicValue[string]
 	epic            syncutil.AtomicValue[string]
@@ -114,6 +122,14 @@ type PluginAllure struct {
 	queuedTearDowns syncutil.MutexGuarded[[]*PluginAllure]
 
 	maxAttachmentSize int64
+
+	testsStarted atomic.Bool
+	testTimedOut atomic.Bool
+	stepTimedOut atomic.Bool
+
+	timedOut atomic.Bool
+
+	running atomic.Bool
 }
 
 // Plugin implements [testoplugin.Plugin].
@@ -443,6 +459,8 @@ func (a *PluginAllure) plugin(
 	a.uuid = uuid.New().String()
 	a.outputDir = *flagDir
 	a.inverted = *flagInvert
+	a.groupHooks = true
+	a.handleTimeouts = true
 
 	a.applyOptions(options)
 
@@ -468,6 +486,17 @@ func (a *PluginAllure) status() Status {
 		return status
 	}
 
+	// if test is still running it means we are forming
+	// a report before full completion, which is possible only
+	// during timeout.
+	if a.running.Load() {
+		return StatusBroken
+	}
+
+	return a.realStatus()
+}
+
+func (a *PluginAllure) realStatus() Status {
 	if a.panicked() {
 		return StatusBroken
 	}
@@ -630,8 +659,15 @@ func (a *PluginAllure) asStep() step {
 }
 
 func (a *PluginAllure) timeBoundaries() (start, stop unixMilli) {
-	start = unixMilli(a.timeTest.Start.Add(-a.beforeParallel).UnixMilli())
-	stop = unixMilli(a.timeTest.Stop.UnixMilli())
+	test := a.timeTest.Load()
+
+	// when timed-out
+	if test.Stop.IsZero() {
+		test.Stop = time.Now()
+	}
+
+	start = unixMilli(test.Start.Add(-a.beforeParallel).UnixMilli())
+	stop = unixMilli(test.Stop.UnixMilli())
 
 	return start, stop
 }
@@ -747,22 +783,60 @@ func (a *PluginAllure) asContainer() (container, bool) {
 }
 
 func (a *PluginAllure) beforeAll() {
-	a.Cleanup(a.afterAll)
+	if deadline, ok := a.Deadline(); ok && a.handleTimeouts {
+		ctx, cancel := context.WithCancel(context.Background())
+
+		a.Cleanup(func() { <-ctx.Done() })
+
+		go func() {
+			defer cancel()
+
+			maxDuration := time.Until(deadline) - suiteDeadlineWindow
+
+			select {
+			case <-a.Context().Done():
+				a.afterAll()
+
+			case <-time.After(maxDuration):
+				a.timedOut.Store(true)
+
+				if !a.testTimedOut.Load() && !a.stepTimedOut.Load() {
+					// fix current status so that call to error won't actually
+					// mark this as failed (it'll be marked as broken later).
+					a.Status(a.realStatus())
+
+					a.Error("timed out")
+				}
+
+				a.afterAll()
+			}
+		}()
+	} else {
+		a.Cleanup(a.afterAll)
+	}
 
 	if err := writeCategories(a.outputDir, a.categories); err != nil {
 		a.Logf("failed to write categories: %v", err)
 	}
 
-	a.timeBeforeAll.Start = time.Now()
+	a.running.Store(true)
+
+	a.timeBeforeAll.Modify(func(value *timeBoundary) {
+		value.Start = time.Now()
+	})
 }
 
-//nolint:funlen,cyclop // splitting would make less readable, probably
+//nolint:funlen,cyclop,gocyclo,gocognit // splitting would make less readable, probably
 func (a *PluginAllure) afterAll() {
+	a.running.Store(false)
+
 	now := time.Now()
 
 	// in case it was not set from tests (no tests)
 	a.setBeforeAllStopOnce.Do(func() {
-		a.timeBeforeAll.Stop = now
+		a.timeBeforeAll.Modify(func(value *timeBoundary) {
+			value.Stop = now
+		})
 	})
 
 	a.timeAfterAll.Modify(func(value *timeBoundary) {
@@ -778,8 +852,17 @@ func (a *PluginAllure) afterAll() {
 
 	tests := a.testChildren()
 
-	standalone := func(hook string, steps []*PluginAllure, timing timeBoundary) {
+	standalone := func(hook string, steps []*PluginAllure, timing timeBoundary, status *Status) {
 		res := a.asResult()
+
+		if status != nil {
+			res.Status = *status
+		}
+
+		if res.Status == StatusPassed {
+			res.StatusDetails.Message = ""
+			res.StatusDetails.Trace = ""
+		}
 
 		res.Name = hook
 
@@ -808,34 +891,92 @@ func (a *PluginAllure) afterAll() {
 	}
 
 	{
-		all := make([]*PluginAllure, 0, len(setups)+len(tearDowns))
-
-		all = append(all, setups...)
-		all = append(all, tearDowns...)
-
 		hooks := testo.Reflect(a).Suite.Hooks
 
+		const (
+			hookBeforeAll       = "Before All"
+			hookAfterAll        = "After All"
+			hooksBeforeAfterAll = "Before & After All"
+		)
+
 		switch {
-		case !hooks.MissedBeforeAll && !hooks.MissedAfterAll:
-			stop := a.timeBeforeAll.Stop
-			if !stop.Equal(a.timeAfterAll.Load().Stop) {
-				stop = stop.Add(a.timeAfterAll.Load().Duration())
+		case !hooks.MissedBeforeAll && !hooks.MissedAfterAll && a.groupHooks:
+			beforeAll := a.timeBeforeAll.Load()
+			afterAll := a.timeAfterAll.Load()
+
+			stop := beforeAll.Stop
+
+			if !stop.Equal(afterAll.Stop) && !afterAll.Start.IsZero() {
+				stop = stop.Add(afterAll.Duration())
 			}
 
-			standalone("Before & After All", all, timeBoundary{
-				Start: a.timeBeforeAll.Start,
+			if stop.IsZero() {
+				stop = time.Now()
+			}
+
+			name := hooksBeforeAfterAll
+
+			if a.timedOut.Load() && !a.testsStarted.Load() {
+				name = hookBeforeAll
+			}
+
+			if a.testTimedOut.Load() {
+				name = hookBeforeAll
+			}
+
+			all := make([]*PluginAllure, 0, len(setups)+len(tearDowns))
+
+			all = append(all, setups...)
+			all = append(all, tearDowns...)
+
+			var status *Status
+
+			if a.timedOut.Load() && !a.testTimedOut.Load() {
+				s := StatusBroken
+
+				status = &s
+			}
+
+			standalone(name, all, timeBoundary{
+				Start: beforeAll.Start,
 				// even though this is not technically correct,
 				// as actual end time would equal to just timeAfterAll.Stop
-				// this timings are primarely used for duration, not for stop & end stamps.
+				// this timings are primarily used for duration, not for stop & end stamps.
 				// so to make duration more accurate, we should just add duration of AfterAll.
 				Stop: stop,
-			})
+			}, status)
 
 		case !hooks.MissedBeforeAll:
-			standalone("Before All", all, a.timeBeforeAll)
+			var status *Status
+
+			if a.timedOut.Load() && !a.testsStarted.Load() {
+				s := StatusBroken
+
+				status = &s
+			}
+
+			standalone(hookBeforeAll, setups, a.timeBeforeAll.Load(), status)
+
+			if hooks.MissedAfterAll {
+				break
+			}
+
+			fallthrough
 
 		case !hooks.MissedAfterAll:
-			standalone("After All", all, a.timeAfterAll.Load())
+			if a.testTimedOut.Load() {
+				break
+			}
+
+			var status *Status
+
+			if a.timedOut.Load() {
+				s := StatusBroken
+
+				status = &s
+			}
+
+			standalone(hookAfterAll, tearDowns, a.timeAfterAll.Load(), status)
 		}
 	}
 
@@ -873,12 +1014,56 @@ func (a *PluginAllure) afterAll() {
 	}
 }
 
+//nolint:cyclop,funlen // TODO: split into subfunctions.
 func (a *PluginAllure) beforeEach() {
-	a.Cleanup(a.afterEach)
+	if a.parent != nil {
+		a.parent.testsStarted.Store(true)
+	}
+
+	if deadline, ok := a.Deadline(); ok && a.handleTimeouts {
+		ctx, cancel := context.WithCancel(context.Background())
+
+		a.Cleanup(func() { <-ctx.Done() }) // halt test completion
+
+		go func() {
+			defer cancel()
+
+			maxDuration := time.Until(deadline) - testDeadlineWindow
+
+			// test runner immediately kills testing functions at specified deadline.
+			// even cleanup functions won't run, therefore we need to
+			// write a test report for the current test just before this test is killed.
+
+			select {
+			case <-a.Context().Done():
+				a.afterEach()
+
+			case <-time.After(maxDuration):
+				a.timedOut.Store(true)
+
+				if a.parent != nil {
+					a.parent.testTimedOut.Store(true)
+				}
+
+				if !a.stepTimedOut.Load() {
+					a.Error("timed out")
+				}
+
+				a.Status(StatusBroken)
+				a.afterEach()
+			}
+		}()
+	} else {
+		a.Cleanup(a.afterEach)
+	}
 
 	if a.parent != nil {
 		a.parent.setBeforeAllStopOnce.Do(func() {
-			a.parent.timeBeforeAll.Stop = time.Now()
+			now := time.Now()
+
+			a.parent.timeBeforeAll.Modify(func(value *timeBoundary) {
+				value.Stop = now
+			})
 		})
 	}
 
@@ -898,13 +1083,61 @@ func (a *PluginAllure) beforeEach() {
 		a.Parameters(params...)
 	}
 
-	a.timeTest.Start = time.Now()
+	a.running.Store(true)
+
+	a.timeTest.Modify(func(value *timeBoundary) {
+		value.Start = time.Now()
+	})
 }
 
 func (a *PluginAllure) beforeEachSub() {
-	a.Cleanup(a.afterEachSub)
+	if deadline, ok := a.Deadline(); ok && a.handleTimeouts {
+		ctx, cancel := context.WithCancel(context.Background())
 
-	a.timeTest.Start = time.Now()
+		a.Cleanup(func() { <-ctx.Done() }) // halt test completion
+
+		reflection := testo.Reflect(a)
+
+		level := reflection.Test.GetLevel()
+
+		const perLevel = 5 * time.Millisecond
+
+		go func() {
+			defer cancel()
+
+			maxDuration := time.Until(deadline) - stepDeadlineWindow - perLevel*time.Duration(level)
+
+			select {
+			// can't use a.Context() because it is overridden for steps
+			// to inherit Done() channel from parent, meaning its done
+			// when parent is done which we don't want here.
+			case <-reflection.TestingT.Context().Done():
+				a.afterEachSub()
+
+			case <-time.After(maxDuration):
+				a.timedOut.Store(true)
+
+				if a.parent != nil {
+					a.parent.stepTimedOut.Store(true)
+				}
+
+				if !a.stepTimedOut.Load() {
+					a.Error("timed out")
+				}
+
+				a.Status(StatusBroken)
+				a.afterEachSub()
+			}
+		}()
+	} else {
+		a.Cleanup(a.afterEachSub)
+	}
+
+	a.running.Store(true)
+
+	a.timeTest.Modify(func(value *timeBoundary) {
+		value.Start = time.Now()
+	})
 }
 
 var propertiesWritten sync.Map
@@ -912,7 +1145,13 @@ var propertiesWritten sync.Map
 func (a *PluginAllure) afterEach() {
 	a.Helper()
 
-	a.timeTest.Stop = time.Now()
+	a.running.Store(false)
+
+	now := time.Now()
+
+	a.timeTest.Modify(func(value *timeBoundary) {
+		value.Stop = now
+	})
 
 	inspect := testo.Reflect(a.T)
 
@@ -956,7 +1195,11 @@ func (a *PluginAllure) afterEach() {
 func (a *PluginAllure) afterEachSub() {
 	a.Helper()
 
-	a.timeTest.Stop = time.Now()
+	a.running.Store(false)
+
+	a.timeTest.Modify(func(value *timeBoundary) {
+		value.Stop = time.Now()
+	})
 
 	inspect := testo.Reflect(a.T)
 
@@ -1270,13 +1513,16 @@ func (a *PluginAllure) overrides() testoplugin.Overrides {
 			return func() {
 				// if start is zero it means we are inside a BeforeEach hook of other plugin.
 				// in that case, real test has not started yet, so we shouldn't compute beforeParallel timing.
-				if !a.timeTest.Start.IsZero() {
-					a.beforeParallel = time.Since(a.timeTest.Start)
+				test := a.timeTest.Load()
+				if !test.Start.IsZero() {
+					a.beforeParallel = time.Since(test.Start)
 				}
 
 				f()
 
-				a.timeTest.Start = time.Now()
+				a.timeTest.Modify(func(value *timeBoundary) {
+					value.Start = time.Now()
+				})
 			}
 		},
 	}
@@ -1631,30 +1877,4 @@ func (a *PluginAllure) propagatedStatusDetails(descendants []*PluginAllure) Stat
 		Message: strings.Join(messages, "\n\n\n"),
 		Trace:   strings.Join(traces, "\n\n\n"),
 	}
-}
-
-func trimmedAttachment(
-	data []byte,
-	mediaType MediaType,
-	limit int64,
-) AttachmentBytes {
-	if len(data) <= int(limit) {
-		return Bytes(data).As(mediaType)
-	}
-
-	// we can't use format like "want %d, got %d" because len(data)
-	// isn't always a "full" attachment.
-
-	suffix := fmt.Sprintf("...\n\n...size exceeds %d bytes limit", limit)
-
-	// TODO: it's possible to avoid copying
-	// if we would store some sort of flag
-	// rather than appending text to bytes slice.
-
-	buf := make([]byte, int(limit)+len(suffix))
-
-	copy(buf, data[:limit])
-	copy(buf[limit:], suffix)
-
-	return Bytes(buf).As(TextPlain)
 }

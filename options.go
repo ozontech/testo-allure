@@ -39,6 +39,39 @@ func WithLinkTransformer(f LinkTransformerFunc) testoplugin.Option {
 	}
 }
 
+// WithTimeouts enables test timeout handling.
+// When enabled, allure plugin will mark all
+// running tests and steps as broken just a few milliseconds
+// before [`t.Deadline`] and write their reports.
+//
+// By default, it's enabled.
+//
+// [`t.Deadline`]: https://pkg.go.dev/github.com/ozontech/testo#T.Deadline
+func WithTimeouts(enable bool) testoplugin.Option {
+	return testoplugin.Option{
+		Propagate: true,
+		Value: option(func(a *PluginAllure) {
+			a.handleTimeouts = enable
+		}),
+	}
+}
+
+// WithGroupHooks configures BeforeAll & AfterAll hooks groupping
+// in the allure report.
+//
+// When enabled, if suite defines both of these hooks,
+// they will be groupped in a single test named "Before & After All".
+// Otherwise, it's two separate tests "Before All" and "After All".
+//
+// By default, it's enabled.
+func WithGroupHooks(group bool) testoplugin.Option {
+	return testoplugin.Option{
+		Value: option(func(a *PluginAllure) {
+			a.groupHooks = group
+		}),
+	}
+}
+
 // WithCategories adds [custom categories] to the report.
 // This option should be passed to the top-level [testo.RunSuite] call.
 //
