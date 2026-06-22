@@ -44,8 +44,6 @@ const (
 	stepDeadlineWindow  = 75 * time.Millisecond
 )
 
-const deadlineRound = time.Second
-
 //go:generate go tool ifacemaker -f $GOFILE -o interface.go -s PluginAllure -i Interface -p $GOPACKAGE -e Plugin -y "Interface defines allure plugin interface.\nUseful for writing helpers which require allure methods but can't rely on concrete type." -x -e panicked -e status -e asResult -e parameters -e links -e attachments -e allRawAttachments -e title -e asStep -e timeBoundaries -e steps -e containers -e beforeEach -e afterEach -e hooks -e addMessage -e addTrace -e overrides -e results -e resultsGroupParametrized -e afterAll -e writeResults -e writeContainers -e writeAttachments -e writeAttachment -e writeProperties -e writeCategories -e labels -e attachmentPath -e baseName -e testCaseID -e historyID -e resultsFlattenParametrized -e statusDetails -e suiteName -e plugin -e beforeAll -e cleanup -e writeReport -e plan -e applyOptions -e fullName -e createOutputDir -e asContainer -e beforeEachSub -e afterEachSub -e propagatedStatusDetails -e hookDescendants -e descendants -e testChildren -e hasTestNeighbors -e subtest -e attach -e parentSuiteName -e realStatus
 
 var _ Interface = (*PluginAllure)(nil)
@@ -666,8 +664,6 @@ func (a *PluginAllure) timeBoundaries() (start, stop unixMilli) {
 		test.Stop = time.Now()
 	}
 
-	fmt.Println(a.Name(), test.Start, a.beforeParallel)
-
 	start = unixMilli(test.Start.Add(-a.beforeParallel).UnixMilli())
 	stop = unixMilli(test.Stop.UnixMilli())
 
@@ -807,7 +803,7 @@ func (a *PluginAllure) beforeAll() {
 					// mark this as failed (it'll be marked as broken later).
 					a.Status(a.realStatus())
 
-					a.Errorf("timed out after %s", maxDuration.Round(deadlineRound))
+					a.Error("timed out")
 				}
 
 				a.afterAll()
@@ -1047,7 +1043,7 @@ func (a *PluginAllure) beforeEach() {
 				}
 
 				if !a.stepTimedOut.Load() {
-					a.Errorf("timed out after %s", maxDuration.Round(deadlineRound))
+					a.Error("timed out")
 				}
 
 				a.Status(StatusBroken)
@@ -1123,7 +1119,7 @@ func (a *PluginAllure) beforeEachSub() {
 				}
 
 				if !a.stepTimedOut.Load() {
-					a.Errorf("timed out after %s", maxDuration.Round(deadlineRound))
+					a.Error("timed out")
 				}
 
 				a.Status(StatusBroken)
