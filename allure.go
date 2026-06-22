@@ -666,6 +666,8 @@ func (a *PluginAllure) timeBoundaries() (start, stop unixMilli) {
 		test.Stop = time.Now()
 	}
 
+	fmt.Println(a.Name(), test.Start, a.beforeParallel)
+
 	start = unixMilli(test.Start.Add(-a.beforeParallel).UnixMilli())
 	stop = unixMilli(test.Stop.UnixMilli())
 
