@@ -200,6 +200,16 @@ endless text and...
 ...size exceeds 1000 bytes limit
 ```
 
+## Timeouts
+
+Allure plugin can handle timeouts by `go test`.
+
+If option `allure.WithTimeout(true)` is set, all running tests are marked
+as broken just a few milliseconds before [`t.Deadline`] would happen and
+write their results into report.
+
+It's disabled by default.
+
 ## Options
 
 This plugin provides several options for configuring default behavior.
@@ -207,3 +217,4 @@ This plugin provides several options for configuring default behavior.
 See [options.go](./options.go) for a list of all available options.
 
 [Testify]: https://github.com/stretchr/testify
+[`t.Deadline`]: https://pkg.go.dev/github.com/ozontech/testo#T.Deadline
