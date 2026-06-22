@@ -458,8 +458,14 @@ func trimmedAttachment(
 
 	suffix := fmt.Sprintf("...\n\n...size exceeds %d bytes limit", limit)
 
-	data = data[:limit]
-	data = append(data, suffix...)
+	// TODO: it's possible to avoid copying
+	// if we would store some sort of flag
+	// rather than appending text to bytes slice.
 
-	return Bytes(data).As(TextPlain)
+	buf := make([]byte, int(limit)+len(suffix))
+
+	copy(buf, data[:limit])
+	copy(buf[limit:], suffix)
+
+	return Bytes(buf).As(TextPlain)
 }
