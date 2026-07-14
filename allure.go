@@ -1800,11 +1800,18 @@ func (a *PluginAllure) packageName() string {
 
 	funcName := runtime.FuncForPC(pc).Name()
 
-	lastSlash := max(0, strings.LastIndexByte(funcName, '/'))
+	return packageNameFromFunc(funcName)
+}
 
-	dotAfterLastSlash := strings.IndexByte(funcName[lastSlash:], '.') + lastSlash
+func packageNameFromFunc(name string) string {
+	lastSlash := max(0, strings.LastIndexByte(name, '/'))
 
-	return funcName[:dotAfterLastSlash]
+	dot := strings.IndexByte(name[lastSlash:], '.')
+	if dot == -1 {
+		return name
+	}
+
+	return name[:lastSlash+dot]
 }
 
 func newProperties() properties {
