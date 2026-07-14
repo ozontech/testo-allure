@@ -842,7 +842,7 @@ func (a *PluginAllure) afterAll() {
 		value.Stop = now
 	})
 
-	if !a.Failed() && a.Skipped() {
+	if a.excluded || !a.Failed() && a.Skipped() {
 		return
 	}
 
