@@ -129,6 +129,7 @@ const (
 	labelTag         = "tag"
 	labelParentSuite = "parentSuite"
 	labelSuite       = "suite"
+	labelPackage     = "package"
 	labelHost        = "host"
 	labelFramework   = "framework"
 	labelLanguage    = "language"

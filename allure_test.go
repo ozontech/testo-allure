@@ -285,3 +285,42 @@ func Test_fullName(t *testing.T) {
 		})
 	}
 }
+
+func Test_packageNameFromFunc(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		want string
+	}{
+		{
+			name: "my.repo.go/pkg/foo/bar.(*Struct).Func",
+			want: "my.repo.go/pkg/foo/bar",
+		},
+		{
+			name: "my.repo.go/pkg/foo/bar.(Struct).Func",
+			want: "my.repo.go/pkg/foo/bar",
+		},
+		{
+			name: "my.repo.go/pkg/foo/bar.Func",
+			want: "my.repo.go/pkg/foo/bar",
+		},
+		{
+			name: "my.repo.go/pkg/foo/bar",
+			want: "my.repo.go/pkg/foo/bar",
+		},
+		{
+			name: "",
+			want: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := packageNameFromFunc(tt.name)
+
+			require.Equal(t, tt.want, got)
+		})
+	}
+}
