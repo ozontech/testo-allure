@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"runtime"
 	"slices"
@@ -130,8 +131,6 @@ type PluginAllure struct {
 	timedOut atomic.Bool
 
 	running atomic.Bool
-
-	pkg syncutil.AtomicValue[string]
 }
 
 // Plugin implements [testoplugin.Plugin].
@@ -1798,6 +1797,18 @@ func (a *PluginAllure) packageName() string {
 
 	default:
 		return ""
+	}
+
+	if pc == 0 {
+		v := reflect.ValueOf(testo.Reflect(a).Suite.Value)
+
+		typ := v.Type()
+
+		for typ.Kind() == reflect.Pointer {
+			typ = typ.Elem()
+		}
+
+		return typ.PkgPath()
 	}
 
 	funcName := runtime.FuncForPC(pc).Name()
