@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Automatically set package name as `package` label.
 
+### Fixed
+
+- Fixed a bug when `WithExcluded` option would not affect generation of `Before & After All` pseudo-tests.
+
 ## [1.3.0] - 2026-06-22
 
 ### Added
