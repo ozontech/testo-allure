@@ -44,7 +44,7 @@ const (
 	stepDeadlineWindow  = 75 * time.Millisecond
 )
 
-//go:generate go tool ifacemaker -f $GOFILE -o interface.go -s PluginAllure -i Interface -p $GOPACKAGE -e Plugin -y "Interface defines allure plugin interface.\nUseful for writing helpers which require allure methods but can't rely on concrete type." -x -e panicked -e status -e asResult -e parameters -e links -e attachments -e allRawAttachments -e title -e asStep -e timeBoundaries -e steps -e containers -e beforeEach -e afterEach -e hooks -e addMessage -e addTrace -e overrides -e results -e resultsGroupParametrized -e afterAll -e writeResults -e writeContainers -e writeAttachments -e writeAttachment -e writeProperties -e writeCategories -e labels -e attachmentPath -e baseName -e testCaseID -e historyID -e resultsFlattenParametrized -e statusDetails -e suiteName -e plugin -e beforeAll -e cleanup -e writeReport -e plan -e applyOptions -e fullName -e createOutputDir -e asContainer -e beforeEachSub -e afterEachSub -e propagatedStatusDetails -e hookDescendants -e descendants -e testChildren -e hasTestNeighbors -e subtest -e attach -e parentSuiteName -e realStatus -e packageName -e root
+//go:generate go tool ifacemaker -f $GOFILE -o interface.go -s PluginAllure -i Interface -p $GOPACKAGE -e Plugin -y "Interface defines allure plugin interface.\nUseful for writing helpers which require allure methods but can't rely on concrete type." -x -e panicked -e status -e asResult -e parameters -e links -e attachments -e allRawAttachments -e title -e asStep -e timeBoundaries -e steps -e containers -e beforeEach -e afterEach -e hooks -e addMessage -e addTrace -e overrides -e results -e resultsGroupParametrized -e afterAll -e writeResults -e writeContainers -e writeAttachments -e writeAttachment -e writeProperties -e writeCategories -e labels -e attachmentPath -e baseName -e testCaseID -e historyID -e resultsFlattenParametrized -e statusDetails -e suiteName -e plugin -e beforeAll -e cleanup -e writeReport -e plan -e applyOptions -e fullName -e createOutputDir -e asContainer -e beforeEachSub -e afterEachSub -e propagatedStatusDetails -e hookDescendants -e descendants -e testChildren -e hasTestNeighbors -e subtest -e attach -e parentSuiteName -e realStatus -e packageName
 
 var _ Interface = (*PluginAllure)(nil)
 
@@ -1787,10 +1787,6 @@ func (a *PluginAllure) suiteName() string {
 }
 
 func (a *PluginAllure) packageName() string {
-	if pkg := a.root().pkg.Load(); pkg != "" {
-		return pkg
-	}
-
 	var pc uintptr
 
 	switch test := testo.Reflect(a).Test.(type) {
@@ -1806,22 +1802,7 @@ func (a *PluginAllure) packageName() string {
 
 	funcName := runtime.FuncForPC(pc).Name()
 
-	pkg := packageNameFromFunc(funcName)
-
-	// so that pkg name is available from Before & After All pseudo-tests.
-	a.root().pkg.Store(pkg)
-
-	return pkg
-}
-
-func (a *PluginAllure) root() *PluginAllure {
-	curr := a
-
-	for curr.parent != nil {
-		curr = curr.parent
-	}
-
-	return curr
+	return packageNameFromFunc(funcName)
 }
 
 func packageNameFromFunc(name string) string {
