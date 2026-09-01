@@ -1472,6 +1472,16 @@ func (a *PluginAllure) overrides() testoplugin.Overrides {
 		FailNow: captureTrace[testoplugin.FuncFailNow](a),
 		Fail:    captureTrace[testoplugin.FuncFail](a),
 
+		Attr: func(f testoplugin.FuncAttr) testoplugin.FuncAttr {
+			return func(key, value string) {
+				a.Helper()
+
+				f(key, value)
+
+				a.Parameters(NewParameter(key, value).Excluded())
+			}
+		},
+
 		Context: func(f testoplugin.FuncContext) testoplugin.FuncContext {
 			if !a.inStep.Load() {
 				return f
