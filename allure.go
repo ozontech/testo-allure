@@ -107,6 +107,7 @@ type PluginAllure struct {
 	deduplicateAttachments bool
 	groupHooks             bool
 	handleTimeouts         bool
+	markKinds              bool
 
 	owner           syncutil.AtomicValue[string]
 	epic            syncutil.AtomicValue[string]
@@ -461,6 +462,7 @@ func (a *PluginAllure) plugin(
 	a.outputDir = *flagDir
 	a.inverted = *flagInvert
 	a.groupHooks = true
+	a.markKinds = true
 
 	a.applyOptions(options)
 
@@ -1667,6 +1669,22 @@ func writeCategories(dir string, categories []Category) error {
 	return nil
 }
 
+func (a *PluginAllure) kind() string {
+	if !a.markKinds {
+		return ""
+	}
+
+	reflection := testo.Reflect(a)
+
+	level := reflection.Test.GetLevel()
+
+	if level == 0 {
+		return kindHook
+	}
+
+	return kindTest
+}
+
 func (a *PluginAllure) labels() []Label {
 	labels := a.rawLabels.Load().ClonedSlice()
 
@@ -1687,6 +1705,7 @@ func (a *PluginAllure) labels() []Label {
 		{Name: labelHost, Value: hostname},
 		{Name: labelLanguage, Value: "go"},
 		{Name: labelFramework, Value: "testo"},
+		{Name: labelKind, Value: a.kind()},
 	} {
 		if l.Value != "" && !labelsSet[l.Name] {
 			labels = append(labels, l)

@@ -137,6 +137,12 @@ const (
 	labelEpic        = "epic"
 	labelFeature     = "feature"
 	labelStory       = "story"
+	labelKind        = "kind" // concept introduced by this plugin
+)
+
+const (
+	kindTest = "test"
+	kindHook = "hook"
 )
 
 // LinkType is the type of link.

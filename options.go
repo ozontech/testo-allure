@@ -39,6 +39,20 @@ func WithLinkTransformer(f LinkTransformerFunc) testoplugin.Option {
 	}
 }
 
+// WithKinds configures setting of the "kind" label.
+//
+// Kind label stores test case kind - either a regular "test" or a suite "hook".
+//
+// By default, it's enabled.
+func WithKinds(mark bool) testoplugin.Option {
+	return testoplugin.Option{
+		Propagate: true,
+		Value: option(func(a *PluginAllure) {
+			a.markKinds = mark
+		}),
+	}
+}
+
 // WithTimeout enables test timeout handling.
 // When enabled, allure plugin will mark all
 // running tests and steps as broken just a few milliseconds
