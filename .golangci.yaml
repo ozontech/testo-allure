@@ -15,7 +15,10 @@ formatters:
         - pattern: "interface{}"
           replacement: "any"
     gofumpt:
-      extra-rules: true
+      extra:
+        group-params: true
+        clothe-returns: true
+        balance-calls: true
 
 linters:
   default: all
@@ -24,7 +27,9 @@ linters:
     - ireturn
     - depguard
     - exhaustive
+    # deprecated aliases are separate linters, default: all turns them on too
     - exhaustruct
+    - exhaustruct_v5
     - wrapcheck
     - varnamelen
     - mnd
@@ -36,6 +41,7 @@ linters:
     - gochecknoglobals
     - err113
     - gochecknoinits
+    - gomodguard
   exclusions:
     rules:
       - linters:

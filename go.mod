@@ -1,10 +1,10 @@
 module github.com/ozontech/testo-allure
 
-go 1.24.0
+go 1.25
 
 require (
 	github.com/gabriel-vasile/mimetype v1.4.11
-	github.com/ozontech/testo v1.5.1
+	github.com/ozontech/testo v1.8.0
 	github.com/stretchr/testify v1.11.1
 )
 

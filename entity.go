@@ -137,6 +137,7 @@ const (
 	labelEpic        = "epic"
 	labelFeature     = "feature"
 	labelStory       = "story"
+	labelLayer       = "layer"
 )
 
 // LinkType is the type of link.

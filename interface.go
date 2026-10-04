@@ -61,6 +61,15 @@ type Interface interface {
 	//
 	// [filtering]: https://allurereport.org/docs/sorting-and-filtering/#filter-tests-by-tags
 	Tags(tags ...string)
+	// Layer specifies a test layer.
+	//
+	// Use layers for one mutually exclusive testing dimension
+	// such as UI, API, or unit testing.
+	// Unlike tags, a test case belongs to one layer at a time.
+	//
+	// Layers are useful when the same reporting and planning
+	// views need one stable classification axis.
+	Layer(layer string)
 	// ID specifies unique identifier of this test in Allure TestOps' database.
 	//
 	// If Allure TestOps discovers ID in a test result, it ignores all
