@@ -112,6 +112,7 @@ type PluginAllure struct {
 	epic            syncutil.AtomicValue[string]
 	feature         syncutil.AtomicValue[string]
 	story           syncutil.AtomicValue[string]
+	layer           syncutil.AtomicValue[string]
 	severity        syncutil.AtomicInt[Severity]
 	titleOverwrite  syncutil.AtomicValue[string]
 	allureID        syncutil.AtomicValue[string]
@@ -254,6 +255,18 @@ func (a *PluginAllure) Tags(tags ...string) {
 	}
 
 	a.Labels(labels...)
+}
+
+// Layer specifies a test layer.
+//
+// Use layers for one mutually exclusive testing dimension
+// such as UI, API, or unit testing.
+// Unlike tags, a test case belongs to one layer at a time.
+//
+// Layers are useful when the same reporting and planning
+// views need one stable classification axis.
+func (a *PluginAllure) Layer(layer string) {
+	a.layer.Store(layer)
 }
 
 // ID specifies unique identifier of this test in Allure TestOps' database.
@@ -1700,6 +1713,7 @@ func (a *PluginAllure) labels() []Label {
 		{Name: labelEpic, Value: a.epic.Load()},
 		{Name: labelFeature, Value: a.feature.Load()},
 		{Name: labelStory, Value: a.story.Load()},
+		{Name: labelLayer, Value: a.layer.Load()},
 		{Name: labelSeverity, Value: a.severity.Load().String()},
 		{Name: labelAllureID, Value: a.allureID.Load()},
 	} {
