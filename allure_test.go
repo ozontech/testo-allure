@@ -127,6 +127,44 @@ func TestTrimLines(t *testing.T) {
 	}
 }
 
+func TestHoistTestifySuppliedMsg(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		text string
+		want string
+	}{
+		{
+			name: "no message",
+			text: `
+Error: Should be false
+Test:  Test/Suite/TestFoo/assert:_false
+`,
+			want: `
+Error: Should be false
+Test:  Test/Suite/TestFoo/assert:_false
+`,
+		},
+		{
+			name: "with message",
+			text: `
+Error: Should be false
+Test:  Test/Suite/TestFoo/assert:_false
+Messages:   oops, something went wrong
+`,
+			want: `
+Error: oops, something went wrong
+Test:  Test/Suite/TestFoo/assert:_false
+`,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := hoistTestifySuppliedMsg(tc.text)
+
+			require.Equal(t, tc.want, got)
+		})
+	}
+}
+
 func TestTrimTestifyErrorTrace(t *testing.T) {
 	for _, tc := range []struct {
 		name string
@@ -241,8 +279,6 @@ Caller: /Users/user/testo/pkg/plugins/allure/examples/02_advanced/main_test.go:1
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
 			got := trimTestifyErrorTrace(tc.text)
 
 			require.Equal(t, tc.want, got)

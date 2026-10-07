@@ -1415,6 +1415,7 @@ var trimTestifyErrorTraceRegex = regexp.MustCompile(`(?sU)Error Trace:.+\s*Error
 func transformTestifyErrorMsg(s string) string {
 	s = trimTestifyErrorTrace(s)
 	s = fixTestifyErrorMsg(s)
+	s = hoistTestifySuppliedMsg(s)
 
 	return s
 }
@@ -1424,6 +1425,8 @@ func fixTestifyErrorMsg(s string) string {
 
 	for i, l := range lines {
 		l = strings.TrimSpace(l)
+
+		lines[i] = l
 
 		const (
 			errPrefix  = "Error: "
@@ -1464,6 +1467,34 @@ func fixTestifyErrorMsg(s string) string {
 
 func trimTestifyErrorTrace(s string) string {
 	return trimTestifyErrorTraceRegex.ReplaceAllString(s, "Error:")
+}
+
+// hoistTestifySuppliedMsg moves "Messages: " contents
+// to "Error: " replacing original error message.
+func hoistTestifySuppliedMsg(s string) string {
+	lines := strings.Split(s, "\n")
+
+	var msg string
+
+	// messages should be at the end of the string
+	for i, line := range slices.Backward(lines) {
+		if msg == "" {
+			after, ok := strings.CutPrefix(line, "Messages: ")
+			if ok {
+				msg = strings.TrimSpace(after)
+
+				lines = slices.Delete(lines, i, i+1)
+
+				continue
+			}
+		}
+
+		if strings.HasPrefix(line, "Error: ") && msg != "" {
+			lines[i] = "Error: " + msg
+		}
+	}
+
+	return strings.Join(lines, "\n")
 }
 
 func trimCallerLine(s string) string {
