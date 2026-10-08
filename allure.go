@@ -1413,8 +1413,8 @@ func captureOutput[F ~func(...any)](a *PluginAllure) testoplugin.Override[F] {
 var trimTestifyErrorTraceRegex = regexp.MustCompile(`(?sU)Error Trace:.+\s*Error:`)
 
 func transformTestifyErrorMsg(s string) string {
-	s = trimTestifyErrorTrace(s)
-	s = fixTestifyErrorMsg(s)
+	// s = trimTestifyErrorTrace(s)
+	// s = fixTestifyErrorMsg(s)
 	s = hoistTestifySuppliedMsg(s)
 
 	return s
@@ -1469,28 +1469,89 @@ func trimTestifyErrorTrace(s string) string {
 	return trimTestifyErrorTraceRegex.ReplaceAllString(s, "Error:")
 }
 
+var testifyKV = regexp.MustCompile(`^\s*(?P<key>.+?):\s(?P<value>.*)`)
+
 // hoistTestifySuppliedMsg moves "Messages: " contents
 // to "Error: " replacing original error message.
 func hoistTestifySuppliedMsg(s string) string {
-	lines := strings.Split(s, "\n")
-
-	var msg string
-
-	// messages should be at the end of the string
-	for i, line := range slices.Backward(lines) {
-		if msg == "" {
-			after, ok := strings.CutPrefix(line, "Messages: ")
-			if ok {
-				msg = strings.TrimSpace(after)
-
-				lines = slices.Delete(lines, i, i+1)
-
-				continue
-			}
+	split := func(s string) (key, value string, found bool) {
+		matches := testifyKV.FindStringSubmatch(s)
+		if len(matches) == 0 {
+			return "", "", false
 		}
 
-		if strings.HasPrefix(line, "Error: ") && msg != "" {
-			lines[i] = "Error: " + msg
+		groups := testifyKV.SubexpNames()
+
+		res := make(map[string]string, len(groups))
+
+		for i, name := range groups {
+			if i == 0 {
+				continue
+			}
+
+			res[name] = matches[i]
+		}
+
+		return res["key"], strings.TrimSpace(res["value"]), true
+	}
+
+	var (
+		prevKey    string
+		prevValues []string
+		keys       []string
+	)
+
+	byKey := make(map[string][]string)
+
+	for line := range strings.Lines(s) {
+		key, value, ok := split(line)
+		if !ok {
+			prevValues = append(prevValues, strings.TrimSpace(line))
+
+			continue
+		}
+
+		if prevKey != "" {
+			keys = append(keys, prevKey)
+			byKey[prevKey] = prevValues
+		}
+
+		prevKey = key
+		prevValues = []string{value}
+	}
+
+	keys = append(keys, prevKey)
+	byKey[prevKey] = prevValues
+
+	const (
+		keyMessages   = "Messages"
+		keyError      = "Error"
+		keyErrorTrace = "Error Trace"
+	)
+
+	// TODO: trim error message like in other func already by 2000 runes.
+
+	if _, ok := byKey[keyMessages]; ok {
+		byKey[keyError], byKey[keyMessages] = byKey[keyMessages], byKey[keyError]
+	}
+
+	delete(byKey, keyErrorTrace)
+
+	lines := make([]string, 1, len(keys))
+
+	for _, k := range keys {
+		v, ok := byKey[k]
+		if !ok {
+			continue
+		}
+
+		prefix := k + ": "
+
+		if len(v) == 0 {
+			lines = append(lines, prefix)
+		} else {
+			lines = append(lines, prefix+v[0])
+			lines = append(lines, v[1:]...)
 		}
 	}
 
