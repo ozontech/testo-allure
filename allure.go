@@ -20,7 +20,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-	"unicode"
 
 	"github.com/ozontech/testo"
 	"github.com/ozontech/testo-allure/internal/allurehash"
@@ -1410,91 +1409,30 @@ func captureOutput[F ~func(...any)](a *PluginAllure) testoplugin.Override[F] {
 	}
 }
 
-var trimTestifyErrorTraceRegex = regexp.MustCompile(`(?sU)Error Trace:.+\s*Error:`)
-
-func transformTestifyErrorMsg(s string) string {
-	// s = trimTestifyErrorTrace(s)
-	// s = fixTestifyErrorMsg(s)
-	s = hoistTestifySuppliedMsg(s)
-
-	return s
-}
-
-func fixTestifyErrorMsg(s string) string {
-	lines := strings.Split(s, "\n")
-
-	for i, l := range lines {
-		l = strings.TrimSpace(l)
-
-		lines[i] = l
-
-		const (
-			errPrefix  = "Error: "
-			testPrefix = "Test: "
-		)
-
-		switch {
-		case strings.HasPrefix(l, errPrefix):
-			const limit = 2000
-
-			if len(l) > limit {
-				l = l[:limit] + "..."
-			}
-
-			idx := strings.IndexFunc(
-				l[len(errPrefix):],
-				func(r rune) bool { return !unicode.IsSpace(r) },
-			)
-
-			if idx >= 0 {
-				lines[i] = l[:len(errPrefix)] + l[len(errPrefix)+idx:]
-			}
-
-		case strings.HasPrefix(l, testPrefix):
-			idx := strings.IndexFunc(
-				l[len(testPrefix):],
-				func(r rune) bool { return !unicode.IsSpace(r) },
-			)
-
-			if idx >= 0 {
-				lines[i] = l[:len(testPrefix)] + " " + l[len(testPrefix)+idx:]
-			}
-		}
-	}
-
-	return strings.Join(lines, "\n")
-}
-
-func trimTestifyErrorTrace(s string) string {
-	return trimTestifyErrorTraceRegex.ReplaceAllString(s, "Error:")
-}
-
 var testifyKV = regexp.MustCompile(`^\s*(?P<key>.+?):\s(?P<value>.*)`)
 
-// hoistTestifySuppliedMsg moves "Messages: " contents
-// to "Error: " replacing original error message.
-func hoistTestifySuppliedMsg(s string) string {
-	split := func(s string) (key, value string, found bool) {
-		matches := testifyKV.FindStringSubmatch(s)
-		if len(matches) == 0 {
-			return "", "", false
-		}
-
-		groups := testifyKV.SubexpNames()
-
-		res := make(map[string]string, len(groups))
-
-		for i, name := range groups {
-			if i == 0 {
-				continue
-			}
-
-			res[name] = matches[i]
-		}
-
-		return res["key"], strings.TrimSpace(res["value"]), true
+func testifySplitKeyValue(s string) (key, value string, found bool) {
+	matches := testifyKV.FindStringSubmatch(s)
+	if len(matches) == 0 {
+		return "", "", false
 	}
 
+	groups := testifyKV.SubexpNames()
+
+	res := make(map[string]string, len(groups))
+
+	for i, name := range groups {
+		if i == 0 {
+			continue
+		}
+
+		res[name] = matches[i]
+	}
+
+	return res["key"], strings.TrimSpace(res["value"]), true
+}
+
+func transformTestifyErrorMsg(s string) string {
 	var (
 		prevKey    string
 		prevValues []string
@@ -1504,7 +1442,13 @@ func hoistTestifySuppliedMsg(s string) string {
 	byKey := make(map[string][]string)
 
 	for line := range strings.Lines(s) {
-		key, value, ok := split(line)
+		const lenLimit = 2000
+
+		if len(line) > lenLimit {
+			line = line[:lenLimit] + "..."
+		}
+
+		key, value, ok := testifySplitKeyValue(line)
 		if !ok {
 			prevValues = append(prevValues, strings.TrimSpace(line))
 
@@ -1521,27 +1465,16 @@ func hoistTestifySuppliedMsg(s string) string {
 	}
 
 	keys = append(keys, prevKey)
+
 	byKey[prevKey] = prevValues
 
-	const (
-		keyMessages   = "Messages"
-		keyError      = "Error"
-		keyErrorTrace = "Error Trace"
-	)
-
-	// TODO: trim error message like in other func already by 2000 runes.
-
-	if _, ok := byKey[keyMessages]; ok {
-		byKey[keyError], byKey[keyMessages] = byKey[keyMessages], byKey[keyError]
-	}
-
-	delete(byKey, keyErrorTrace)
+	adjustTestifyLines(byKey)
 
 	lines := make([]string, 1, len(keys))
 
 	for _, k := range keys {
 		v, ok := byKey[k]
-		if !ok {
+		if !ok || k == "" {
 			continue
 		}
 
@@ -1556,6 +1489,33 @@ func hoistTestifySuppliedMsg(s string) string {
 	}
 
 	return strings.Join(lines, "\n")
+}
+
+// adjustTestifyLines accepts a testify assertion log lines
+// groupped by their keys. For example:
+//
+//	Error: foobar
+//	Error Trace: ...
+//	Messages: one
+//	          two
+//	          three
+func adjustTestifyLines(byKey map[string][]string) {
+	const (
+		keyMessages   = "Messages"
+		keyError      = "Error"
+		keyErrorTrace = "Error Trace"
+	)
+
+	{
+		_, hasMessages := byKey[keyMessages]
+		_, hasError := byKey[keyError]
+
+		if hasMessages && hasError {
+			byKey[keyError], byKey[keyMessages] = byKey[keyMessages], byKey[keyError]
+		}
+	}
+
+	delete(byKey, keyErrorTrace)
 }
 
 func trimCallerLine(s string) string {

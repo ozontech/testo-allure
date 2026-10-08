@@ -127,45 +127,7 @@ func TestTrimLines(t *testing.T) {
 	}
 }
 
-func TestHoistTestifySuppliedMsg(t *testing.T) {
-	for _, tc := range []struct {
-		name string
-		text string
-		want string
-	}{
-		{
-			name: "no message",
-			text: `
-Error: Should be false
-Test:  Test/Suite/TestFoo/assert:_false
-`,
-			want: `
-Error: Should be false
-Test:  Test/Suite/TestFoo/assert:_false
-`,
-		},
-		{
-			name: "with message",
-			text: `
-Error: Should be false
-Test:  Test/Suite/TestFoo/assert:_false
-Messages:   oops, something went wrong
-`,
-			want: `
-Error: oops, something went wrong
-Test:  Test/Suite/TestFoo/assert:_false
-`,
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			got := hoistTestifySuppliedMsg(tc.text)
-
-			require.Equal(t, tc.want, got)
-		})
-	}
-}
-
-func TestTrimTestifyErrorTrace(t *testing.T) {
+func TestTransformTestifyErrorMessage(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 		text string
@@ -186,9 +148,9 @@ Test:       	Test/Suite/TestExample_case_3212728f34741cb7/send_request/assert:_s
 Messages:   	successful round trip
 Caller: /Users/user/testo/pkg/plugins/allure/examples/02_advanced/main_test.go:106`,
 			want: `
-Error:      	An error is expected but got nil.
-Test:       	Test/Suite/TestExample_case_3212728f34741cb7/send_request/assert:_successful_round_trip
-Messages:   	successful round trip
+Error: successful round trip
+Test: Test/Suite/TestExample_case_3212728f34741cb7/send_request/assert:_successful_round_trip
+Messages: An error is expected but got nil.
 Caller: /Users/user/testo/pkg/plugins/allure/examples/02_advanced/main_test.go:106`,
 		},
 		{
@@ -200,10 +162,8 @@ Test:       	Test/Suite/TestExample_case_3212728f34741cb7/send_request/assert:_s
 Messages:   	successful round trip
 Caller: /Users/user/testo/pkg/plugins/allure/examples/02_advanced/main_test.go:106`,
 			want: `
-Error Trace:	/Users/user/testo/pkg/plugins/allure/assert.gen.go:426
-/Users/user/testo/testo.go:277
-Test:       	Test/Suite/TestExample_case_3212728f34741cb7/send_request/assert:_successful_round_trip
-Messages:   	successful round trip
+Test: Test/Suite/TestExample_case_3212728f34741cb7/send_request/assert:_successful_round_trip
+Messages: successful round trip
 Caller: /Users/user/testo/pkg/plugins/allure/examples/02_advanced/main_test.go:106`,
 		},
 		{
@@ -215,10 +175,8 @@ Test:       	Test/Suite/TestExample_case_3212728f34741cb7/send_request/assert:_s
 Messages:   	successful round trip
 Caller: /Users/user/testo/pkg/plugins/allure/examples/02_advanced/main_test.go:106`,
 			want: `
-Error Trace:	/Users/user/testo/pkg/plugins/allure/assert.gen.go:426
-/Users/user/testo/testo.go:277
-Test:       	Test/Suite/TestExample_case_3212728f34741cb7/send_request/assert:_successful_round_trip
-Messages:   	successful round trip
+Test: Test/Suite/TestExample_case_3212728f34741cb7/send_request/assert:_successful_round_trip
+Messages: successful round trip
 Caller: /Users/user/testo/pkg/plugins/allure/examples/02_advanced/main_test.go:106`,
 		},
 		{
@@ -232,9 +190,9 @@ Test:       	Test/Suite/TestExample_case_3212728f34741cb7/send_request/assert:_s
 Messages:   	successful round trip
 Caller: /Users/user/testo/pkg/plugins/allure/examples/02_advanced/main_test.go:106`,
 			want: `
-Error:      	An error is expected but got nil.
-Test:       	Test/Suite/TestExample_case_3212728f34741cb7/send_request/assert:_successful_round_trip
-Messages:   	successful round trip
+Error: successful round trip
+Test: Test/Suite/TestExample_case_3212728f34741cb7/send_request/assert:_successful_round_trip
+Messages: An error is expected but got nil.
 Caller: /Users/user/testo/pkg/plugins/allure/examples/02_advanced/main_test.go:106`,
 		},
 		{
@@ -245,41 +203,14 @@ Test:       	Test/Suite/TestExample_case_3212728f34741cb7/send_request/assert:_s
 Messages:   	successful round trip
 Caller: /Users/user/testo/pkg/plugins/allure/examples/02_advanced/main_test.go:106`,
 			want: `
-Error:      	An error is expected but got nil.
-Test:       	Test/Suite/TestExample_case_3212728f34741cb7/send_request/assert:_successful_round_trip
-Messages:   	successful round trip
-Caller: /Users/user/testo/pkg/plugins/allure/examples/02_advanced/main_test.go:106`,
-		},
-		{
-			name: "multiple error traces",
-			text: `
-Error Trace:	/Users/user/testo/pkg/plugins/allure/assert.gen.go:426
-/Users/user/testo/testo.go:276
-/Users/user/testo/testo.go:277
-Error:      	An error is expected but got nil.
-Test:       	Test/Suite/TestExample_case_3212728f34741cb7/send_request/assert:_successful_round_trip
-Messages:   	successful round trip
-Caller: /Users/user/testo/pkg/plugins/allure/examples/02_advanced/main_test.go:106
-Error Trace:	/Users/user/testo/pkg/plugins/allure/assert.gen.go:426
-/Users/user/testo/testo.go:276
-/Users/user/testo/testo.go:277
-Error:      	An error is expected but got nil.
-Test:       	Test/Suite/TestExample_case_3212728f34741cb7/send_request/assert:_successful_round_trip
-Messages:   	successful round trip
-Caller: /Users/user/testo/pkg/plugins/allure/examples/02_advanced/main_test.go:106`,
-			want: `
-Error:      	An error is expected but got nil.
-Test:       	Test/Suite/TestExample_case_3212728f34741cb7/send_request/assert:_successful_round_trip
-Messages:   	successful round trip
-Caller: /Users/user/testo/pkg/plugins/allure/examples/02_advanced/main_test.go:106
-Error:      	An error is expected but got nil.
-Test:       	Test/Suite/TestExample_case_3212728f34741cb7/send_request/assert:_successful_round_trip
-Messages:   	successful round trip
+Error: successful round trip
+Test: Test/Suite/TestExample_case_3212728f34741cb7/send_request/assert:_successful_round_trip
+Messages: An error is expected but got nil.
 Caller: /Users/user/testo/pkg/plugins/allure/examples/02_advanced/main_test.go:106`,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			got := trimTestifyErrorTrace(tc.text)
+			got := transformTestifyErrorMsg(tc.text)
 
 			require.Equal(t, tc.want, got)
 		})
