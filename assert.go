@@ -2,6 +2,9 @@ package allure
 
 import (
 	"fmt"
+	"regexp"
+	"slices"
+	"strings"
 )
 
 //go:generate sh -c "cd _codegen && go run . -pkg allure -path ../assert.gen.go"
@@ -88,4 +91,123 @@ func asShortString(v any) string {
 	}
 
 	return s
+}
+
+var testifyKV = regexp.MustCompile(`^\s*(?P<key>.+?):\s(?P<value>.*)`)
+
+func testifySplitKeyValue(s string) (key, value string, found bool) {
+	matches := testifyKV.FindStringSubmatch(s)
+	if len(matches) == 0 {
+		return "", "", false
+	}
+
+	groups := testifyKV.SubexpNames()
+
+	res := make(map[string]string, len(groups))
+
+	for i, name := range groups {
+		if i == 0 {
+			continue
+		}
+
+		res[name] = matches[i]
+	}
+
+	return res["key"], strings.TrimSpace(res["value"]), true
+}
+
+func transformTestifyErrorMsg(s string) string {
+	var (
+		prevKey    string
+		prevValues []string
+		keys       []string
+	)
+
+	byKey := make(map[string][]string)
+
+	for line := range strings.Lines(s) {
+		const lenLimit = 2000
+
+		if len(line) > lenLimit {
+			line = line[:lenLimit] + "..."
+		}
+
+		key, value, ok := testifySplitKeyValue(line)
+		if !ok {
+			prevValues = append(prevValues, strings.TrimSpace(line))
+
+			continue
+		}
+
+		if prevKey != "" {
+			keys = append(keys, prevKey)
+			byKey[prevKey] = prevValues
+		}
+
+		prevKey = key
+		prevValues = []string{value}
+	}
+
+	keys = append(keys, prevKey)
+
+	byKey[prevKey] = prevValues
+
+	adjustTestifyLines(byKey)
+
+	lines := make([]string, 1, len(keys))
+
+	for _, k := range keys {
+		v, ok := byKey[k]
+		if !ok || k == "" {
+			continue
+		}
+
+		prefix := k + ": "
+
+		if len(v) == 0 {
+			lines = append(lines, prefix)
+		} else {
+			lines = append(lines, prefix+v[0])
+			lines = append(lines, v[1:]...)
+		}
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// adjustTestifyLines accepts a testify assertion log lines
+// groupped by their keys. For example:
+//
+//	Error: foobar
+//	Error Trace: ...
+//	Messages: one
+//	          two
+//	          three
+func adjustTestifyLines(byKey map[string][]string) {
+	const (
+		keyMessages   = "Messages"
+		keyError      = "Error"
+		keyErrorTrace = "Error Trace"
+	)
+
+	{
+		_, hasMessages := byKey[keyMessages]
+		_, hasError := byKey[keyError]
+
+		if hasMessages && hasError {
+			byKey[keyError], byKey[keyMessages] = byKey[keyMessages], byKey[keyError]
+		}
+	}
+
+	delete(byKey, keyErrorTrace)
+}
+
+func trimCallerLine(s string) string {
+	lines := strings.Split(s, "\n")
+
+	lines = slices.DeleteFunc(lines, func(l string) bool {
+		return l == "" || strings.HasPrefix(l, "Caller: ")
+	})
+
+	return strings.Join(lines, "\n")
 }
