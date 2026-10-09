@@ -93,9 +93,9 @@ func asShortString(v any) string {
 	return s
 }
 
-var testifyKV = regexp.MustCompile(`^\s*(?P<key>.+?):\s(?P<value>.*)`)
+var testifyKV = regexp.MustCompile(`^\s*(?P<label>.+?):\s(?P<value>.*)`)
 
-func testifySplitKeyValue(s string) (key, value string, found bool) {
+func testifySplitLabel(s string) (label testifyLabel, value string, found bool) {
 	matches := testifyKV.FindStringSubmatch(s)
 	if len(matches) == 0 {
 		return "", "", false
@@ -113,17 +113,40 @@ func testifySplitKeyValue(s string) (key, value string, found bool) {
 		res[name] = matches[i]
 	}
 
-	return res["key"], strings.TrimSpace(res["value"]), true
+	return testifyLabel(res["label"]), strings.TrimSpace(res["value"]), true
+}
+
+type testifyLabel string
+
+const (
+	labelError      testifyLabel = "Error"
+	labelErrorTrace testifyLabel = "Error Trace"
+	labelTest       testifyLabel = "Test"
+	labelMessages   testifyLabel = "Messages"
+)
+
+func (l testifyLabel) String() string {
+	return string(l)
+}
+
+func (l testifyLabel) Known() bool {
+	switch l {
+	case labelError, labelErrorTrace, labelTest, labelMessages:
+		return true
+
+	default:
+		return false
+	}
 }
 
 func transformTestifyErrorMsg(s string) string {
 	var (
-		prevKey    string
+		prevLabel  testifyLabel
 		prevValues []string
-		keys       []string
+		labels     []testifyLabel
 	)
 
-	byKey := make(map[string][]string)
+	byLabel := make(map[testifyLabel][]string)
 
 	for line := range strings.Lines(s) {
 		const lenLimit = 2000
@@ -132,37 +155,37 @@ func transformTestifyErrorMsg(s string) string {
 			line = line[:lenLimit] + "..."
 		}
 
-		key, value, ok := testifySplitKeyValue(line)
-		if !ok {
+		label, value, ok := testifySplitLabel(line)
+		if !ok || !label.Known() {
 			prevValues = append(prevValues, strings.TrimSpace(line))
 
 			continue
 		}
 
-		if prevKey != "" {
-			keys = append(keys, prevKey)
-			byKey[prevKey] = prevValues
+		if prevLabel != "" {
+			labels = append(labels, prevLabel)
+			byLabel[prevLabel] = prevValues
 		}
 
-		prevKey = key
+		prevLabel = label
 		prevValues = []string{value}
 	}
 
-	keys = append(keys, prevKey)
+	labels = append(labels, prevLabel)
 
-	byKey[prevKey] = prevValues
+	byLabel[prevLabel] = prevValues
 
-	adjustTestifyLines(byKey)
+	adjustTestifyLines(byLabel)
 
-	lines := make([]string, 1, len(keys))
+	lines := make([]string, 1, len(labels))
 
-	for _, k := range keys {
-		v, ok := byKey[k]
-		if !ok || k == "" {
+	for _, l := range labels {
+		v, ok := byLabel[l]
+		if !ok || l == "" {
 			continue
 		}
 
-		prefix := k + ": "
+		prefix := l.String() + ": "
 
 		if len(v) == 0 {
 			lines = append(lines, prefix)
@@ -183,23 +206,17 @@ func transformTestifyErrorMsg(s string) string {
 //	Messages: one
 //	          two
 //	          three
-func adjustTestifyLines(byKey map[string][]string) {
-	const (
-		keyMessages   = "Messages"
-		keyError      = "Error"
-		keyErrorTrace = "Error Trace"
-	)
-
+func adjustTestifyLines(byLabel map[testifyLabel][]string) {
 	{
-		_, hasMessages := byKey[keyMessages]
-		_, hasError := byKey[keyError]
+		_, hasMessages := byLabel[labelMessages]
+		_, hasError := byLabel[labelError]
 
 		if hasMessages && hasError {
-			byKey[keyError], byKey[keyMessages] = byKey[keyMessages], byKey[keyError]
+			byLabel[labelError], byLabel[labelMessages] = byLabel[labelMessages], byLabel[labelError]
 		}
 	}
 
-	delete(byKey, keyErrorTrace)
+	delete(byLabel, labelErrorTrace)
 }
 
 func trimCallerLine(s string) string {
