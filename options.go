@@ -194,10 +194,11 @@ func WithMaxAttachmentSize(bytes int64) testoplugin.Option {
 	}
 }
 
-func asStep() testoplugin.Option {
+func asStep(step **PluginAllure) testoplugin.Option {
 	return testoplugin.Option{
 		Value: option(func(a *PluginAllure) {
 			a.inStep.Store(true)
+			*step = a
 		}),
 	}
 }

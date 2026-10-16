@@ -15,6 +15,7 @@ type CommonT interface {
 
 // Step wraps [testo.Run] with some differences:
 //   - if the step fails (before call to t.Parallel) with fatal error, outer test execution will stop.
+//   - if the step is skipped (before call to t.Parallel), outer test will be skipped too.
 //   - context returned by the t.Context will cancel when parent context does.
 //
 // NOTE: [testo.Run] is also treated as Allure step in the report.
@@ -30,9 +31,16 @@ func Step[T CommonT](
 ) {
 	t.Helper()
 
-	options = append(options, asStep())
+	var step *PluginAllure
 
-	if !testo.Run(t, name, f, options...) {
+	options = append(options, asStep(&step))
+
+	if testo.Run(t, name, f, options...) {
+		// propagate skip
+		if step != nil && step.Skipped() {
+			t.SkipNow()
+		}
+	} else {
 		// propagate fatal error
 		if testo.Reflect(t).HasFatalSubtest {
 			u := t.unwrapAllure()
