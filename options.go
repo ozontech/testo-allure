@@ -21,6 +21,9 @@ var (
 
 type option func(*PluginAllure)
 
+// idOption keeps the ID available during planning without applying runtime options.
+type idOption string
+
 // LinkTransformerFunc takes a raw link provided by the user
 // and transforms it before writing the report.
 type LinkTransformerFunc func(link Link) Link
@@ -129,9 +132,7 @@ func WithDeduplicateAttachments(deduplicate bool) testoplugin.Option {
 // [Cooking the AllureID]: https://help.qameta.io/support/solutions/articles/101000480600-cooking-the-allureid
 func WithID(id string) testoplugin.Option {
 	return testoplugin.Option{
-		Value: option(func(a *PluginAllure) {
-			a.ID(id)
-		}),
+		Value: idOption(id),
 	}
 }
 

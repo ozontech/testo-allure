@@ -221,8 +221,6 @@ func (a *PluginAllure) Links(links ...Link) {
 //
 //	t.Labels(allure.NewLabel("name", "value"), allure.NewLabel("otherLabel", "42"))
 func (a *PluginAllure) Labels(labels ...Label) {
-	a.Helper()
-
 	if len(labels) == 0 {
 		return
 	}
@@ -242,8 +240,6 @@ func (a *PluginAllure) Labels(labels ...Label) {
 //
 // [filtering]: https://allurereport.org/docs/sorting-and-filtering/#filter-tests-by-tags
 func (a *PluginAllure) Tags(tags ...string) {
-	a.Helper()
-
 	if len(tags) == 0 {
 		return
 	}
@@ -459,8 +455,11 @@ func (a *PluginAllure) attach(name string, at Attachment) {
 
 func (a *PluginAllure) applyOptions(options []testoplugin.Option) {
 	for _, o := range options {
-		if o, ok := o.Value.(option); ok {
-			o(a)
+		switch value := o.Value.(type) {
+		case option:
+			value(a)
+		case idOption:
+			a.ID(string(value))
 		}
 	}
 }
@@ -1322,23 +1321,7 @@ func (a *PluginAllure) plan() testoplugin.Plan {
 
 			total := len(*tests)
 
-			*tests = slices.DeleteFunc(*tests, func(pt testoplugin.PlannedTest) bool {
-				isSelected := selectors[pt.Info().GetName()]
-
-				if !isSelected {
-					var tmp PluginAllure
-
-					tmp.applyOptions(pt.Annotations())
-
-					isSelected = ids[tmp.allureID.Load()]
-				}
-
-				if a.inverted {
-					return isSelected
-				}
-
-				return !isSelected
-			})
+			*tests = filterPlannedTests(*tests, ids, selectors, a.inverted)
 
 			a.Logf(
 				"allure: using test plan v%s from %q, tests excluded: %d",
@@ -1348,6 +1331,38 @@ func (a *PluginAllure) plan() testoplugin.Plan {
 			)
 		},
 	}
+}
+
+// filterPlannedTests retains tests matching either an ID or an exact selector,
+// or their complement when inverted. It modifies the input slice in place.
+// Callers must skip filtering when the plan contains no IDs or selectors.
+// Only ID payloads are read: other options may require an initialized test context.
+func filterPlannedTests(
+	tests []testoplugin.PlannedTest,
+	ids, selectors map[string]bool,
+	inverted bool,
+) []testoplugin.PlannedTest {
+	return slices.DeleteFunc(tests, func(pt testoplugin.PlannedTest) bool {
+		isSelected := selectors[pt.Info().GetName()]
+
+		if !isSelected {
+			var id string
+
+			for _, annotation := range pt.Annotations() {
+				if value, ok := annotation.Value.(idOption); ok {
+					id = string(value)
+				}
+			}
+
+			isSelected = ids[id]
+		}
+
+		if inverted {
+			return isSelected
+		}
+
+		return !isSelected
+	})
 }
 
 func (a *PluginAllure) hooks() testoplugin.Hooks {
